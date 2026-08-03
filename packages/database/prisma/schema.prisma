@@ -1,0 +1,365 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  username      String?   @unique
+  name          String?
+  bio           String?
+  country       String?
+  language      String?   @default("pt-BR")
+  emailVerified Boolean   @default(false)
+  passwordHash  String
+  role          Role      @default(USER)
+  avatarUrl     String?
+  
+  credits       Int       @default(100)
+  storageLimit  BigInt    @default(5368709120) // 5GB default em bytes
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+
+  projects               Project[]
+  sessions               Session[]
+  refreshTokens          RefreshToken[]
+  passwordResetTokens    PasswordResetToken[]
+  emailVerificationTokens EmailVerificationToken[]
+  settings               UserSettings?
+  auditLogs              AuditLog[]
+  workspacePref          WorkspacePreference?
+  uploadJobs             UploadJob[]
+  assets                 Asset[]
+  assetFolders           AssetFolder[]
+  assetCategories        AssetCategory[]
+  viewerSetting          ViewerSetting?
+  viewerHistory          ViewerHistory[]
+  generations            Generation[]
+}
+
+model Session {
+  id         String   @id @default(uuid())
+  token      String   @unique
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deviceInfo String?
+  ipAddress  String?
+  lastActive DateTime @default(now())
+  createdAt  DateTime @default(now())
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model EmailVerificationToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model UserSettings {
+  userId             String  @id
+  user               User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  emailNotifications Boolean @default(true)
+  themePreference    String  @default("system")
+  updatedAt          DateTime @updatedAt
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action     String
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+}
+
+// === EXISTING MODELS ===
+
+model Project {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  isFavorite  Boolean  @default(false)
+  
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  folders     Folder[]
+  files       File[]
+  history     ProjectHistory[]
+  tags        Tag[]    @relation("ProjectTags")
+}
+
+model Tag {
+  id        String    @id @default(uuid())
+  name      String    @unique
+  color     String?   
+  projects  Project[] @relation("ProjectTags")
+}
+
+model Folder {
+  id        String   @id @default(uuid())
+  name      String
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  parentId  String?
+  parent    Folder?  @relation("FolderToFolder", fields: [parentId], references: [id], onDelete: SetNull)
+  children  Folder[] @relation("FolderToFolder")
+  files     File[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model File {
+  id        String   @id @default(uuid())
+  name      String
+  mimeType  String   
+  url       String   
+  size      Int      
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  folderId  String?
+  folder    Folder?  @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ProjectHistory {
+  id        String   @id @default(uuid())
+  action    String   
+  diff      String?  
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
+
+model WorkspacePreference {
+  userId       String   @id
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  layoutConfig String?  // JSON stringificado com tamanhos de painel
+  activeTabs   String?  // JSON stringificado com IDs das abas abertas
+  theme        String   @default("system")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+enum UploadStatus {
+  PENDING
+  UPLOADING
+  PAUSED
+  COMPLETED
+  FAILED
+}
+
+model UploadJob {
+  id           String       @id @default(uuid())
+  userId       String
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  projectId    String?
+  project      Project?     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  filename     String
+  mimeType     String
+  totalSize    BigInt
+  uploadedSize BigInt       @default(0)
+  status       UploadStatus @default(PENDING)
+  hash         String?
+  
+  metadata     UploadMetadata?
+  errors       UploadError[]
+  
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+}
+
+model UploadMetadata {
+  id           String    @id @default(uuid())
+  uploadId     String    @unique
+  upload       UploadJob @relation(fields: [uploadId], references: [id], onDelete: Cascade)
+  dimensions   String?
+  vertexCount  Int?
+  thumbnailUrl String?
+}
+
+model UploadError {
+  id        String    @id @default(uuid())
+  uploadId  String
+  upload    UploadJob @relation(fields: [uploadId], references: [id], onDelete: Cascade)
+  message   String
+  code      String?
+  createdAt DateTime  @default(now())
+}
+
+// === LIBRARY MODELS ===
+
+enum AssetType {
+  IMAGE
+  MODEL3D
+  TEXTURE
+  MATERIAL
+  ARCHIVE
+  OTHER
+}
+
+model AssetCategory {
+  id        String   @id @default(uuid())
+  name      String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assets    Asset[]
+}
+
+model AssetFolder {
+  id        String        @id @default(uuid())
+  name      String
+  userId    String
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parentId  String?
+  parent    AssetFolder?  @relation("AssetFolderToFolder", fields: [parentId], references: [id], onDelete: SetNull)
+  children  AssetFolder[] @relation("AssetFolderToFolder")
+  assets    Asset[]
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+}
+
+model Asset {
+  id           String    @id @default(uuid())
+  name         String
+  type         AssetType @default(OTHER)
+  mimeType     String
+  url          String
+  thumbnailUrl String?
+  size         BigInt
+  hash         String?
+  
+  isFavorite   Boolean   @default(false)
+  isDeleted    Boolean   @default(false)
+  deletedAt    DateTime?
+  
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  projectId    String?
+  project      Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  folderId     String?
+  folder       AssetFolder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  categoryId   String?
+  category     AssetCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  history      AssetHistory[]
+  generation   Generation?
+
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model AssetHistory {
+  id        String   @id @default(uuid())
+  assetId   String
+  asset     Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  action    String
+  details   String?
+  createdAt DateTime @default(now())
+}
+
+// === VIEWER MODELS ===
+
+model ViewerSetting {
+  id                  String   @id @default(uuid())
+  userId              String   @unique
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  showGrid            Boolean  @default(true)
+  showAxes            Boolean  @default(true)
+  wireframeMode       Boolean  @default(false)
+  backgroundColor     String   @default("#1e293b") // slate-800
+  environmentIntensity Float   @default(1.0)
+  updatedAt           DateTime @updatedAt
+}
+
+model ViewerHistory {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assetId   String
+  asset     Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  openedAt  DateTime @default(now())
+}
+
+// === AI GENERATION MODELS ===
+
+enum GenerationStatus {
+  QUEUED
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model Generation {
+  id             String           @id @default(uuid())
+  prompt         String
+  negativePrompt String?
+  style          String?
+  provider       String           @default("mock")
+  status         GenerationStatus @default(QUEUED)
+  progress       Int              @default(0) // 0 a 100
+  
+  userId         String
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  projectId      String?
+  project        Project?         @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  resultAssetId  String?          @unique
+  resultAsset    Asset?           @relation(fields: [resultAssetId], references: [id], onDelete: SetNull)
+  
+  errorReason    String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  completedAt    DateTime?
+  
+  job            GenerationJob?
+}
+
+model GenerationJob {
+  id           String     @id @default(uuid())
+  generationId String     @unique
+  generation   Generation @relation(fields: [generationId], references: [id], onDelete: Cascade)
+  retryCount   Int        @default(0)
+  providerJobId String?   // ID retornado pela Tripo3D ou outro provider
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+

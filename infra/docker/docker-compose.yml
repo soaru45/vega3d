@@ -1,0 +1,85 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: vega3d_postgres
+    environment:
+      POSTGRES_USER: vega3d_user
+      POSTGRES_PASSWORD: vega3d_password
+      POSTGRES_DB: vega3d_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - vega3d_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vega3d_user -d vega3d_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: vega3d_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    networks:
+      - vega3d_network
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: vega3d_rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - vega3d_network
+
+  api:
+    build: 
+      context: ../../
+      dockerfile: apps/api/Dockerfile
+    container_name: vega3d_api
+    ports:
+      - "3001:3001"
+    environment:
+      - DATABASE_URL=postgresql://vega3d_user:vega3d_password@postgres:5432/vega3d_db?schema=public
+      - REDIS_URL=redis://redis:6379
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
+      - JWT_SECRET=super_secret_jwt_key
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - vega3d_network
+
+  web:
+    build: 
+      context: ../../
+      dockerfile: apps/web/Dockerfile
+    container_name: vega3d_web
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:3001
+    depends_on:
+      - api
+    networks:
+      - vega3d_network
+
+volumes:
+  pgdata:
+  redisdata:
+
+networks:
+  vega3d_network:
+    driver: bridge
