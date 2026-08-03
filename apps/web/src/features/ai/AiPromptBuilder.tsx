@@ -1,45 +1,24 @@
 'use client';
 
 import * as React from 'react';
-import { Send, Sparkles, AlertCircle } from 'lucide-react';
+import { Send, Sparkles, AlertCircle, ImageIcon, X } from 'lucide-react';
 import { Button, Input } from '@vega3d/ui';
 import { useAiStore } from '@/shared/stores/useAiStore';
 import { useViewerStore } from '@/shared/stores/useViewerStore';
 
-// Simulação de chamada Axios
-const mockApiGenerate = async (prompt: string) => {
-  return { data: { generationId: Math.random().toString(36).substring(7), status: 'PROCESSING' } };
-};
-const mockApiPoll = async (id: string) => {
-  // Simula progressão da IA. Em produção, chamaria GET /v1/ai/generations/:id
-  const rand = Math.random();
-  if (rand > 0.8) return { data: { progress: 100, status: 'COMPLETED', resultAsset: { url: '/assets/dummy-model.glb' } } };
-  return { data: { progress: 30, status: 'PROCESSING' } };
-};
-
 export function AiPromptBuilder({ projectId }: { projectId: string }) {
   const [prompt, setPrompt] = React.useState('');
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [imageFile, setImageFile] = React.useState<File | null>(null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
   
-  const { activeGeneration, startGeneration, updateGeneration, clearGeneration } = useAiStore();
-  const { loadModel } = useViewerStore();
+  const { activeGeneration, startGeneration } = useAiStore();
+  const isGenerating = !!activeGeneration;
 
-  const handleGenerate = async () => {
-    if (!prompt.trim() || activeGeneration) return;
-    setIsSubmitting(true);
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isGenerating || (!prompt.trim() && !imageFile)) return;
     
-    try {
-      // 1. Iniciar geração (Custa crédito)
-      const res = await mockApiGenerate(prompt);
-      startGeneration(res.data.generationId, prompt);
-      
-      // 2. Iniciar Polling a cada 2s
-      const interval = setInterval(async () => {
-        try {
-          const pollRes = await mockApiPoll(res.data.generationId);
-          const { progress, status, resultAsset } = pollRes.data;
-          
-    // Inicia geração simulando ou texto ou imagem
+    // Pass prompt and projectId to the store action
     startGeneration(prompt, projectId);
     setPrompt('');
     setImageFile(null);
@@ -53,7 +32,7 @@ export function AiPromptBuilder({ projectId }: { projectId: string }) {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-2 relative">
-      {isPolling && (
+      {isGenerating && (
         <div className="absolute -top-10 left-0 right-0 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 text-xs px-3 py-1.5 rounded-md flex items-center justify-between border border-indigo-100 dark:border-indigo-800 animate-pulse">
           <span className="flex items-center gap-1"><Sparkles className="w-3 h-3" /> Gerando modelo 3D...</span>
         </div>
@@ -75,7 +54,7 @@ export function AiPromptBuilder({ projectId }: { projectId: string }) {
         <button 
           type="button"
           onClick={() => fileInputRef.current?.click()}
-          disabled={isPolling}
+          disabled={isGenerating}
           className="absolute left-2 p-1.5 text-slate-400 hover:text-indigo-500 transition-colors disabled:opacity-50"
           title="Upload de Imagem (Image to 3D)"
         >
@@ -95,13 +74,13 @@ export function AiPromptBuilder({ projectId }: { projectId: string }) {
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
           placeholder={imageFile ? "Descreva detalhes (opcional)..." : "Ex: Um dragão vermelho low poly..."}
-          disabled={isPolling}
+          disabled={isGenerating}
           className="w-full pl-9 pr-10 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 disabled:opacity-50 transition-shadow"
         />
         
         <button
           type="submit"
-          disabled={isPolling || (!prompt.trim() && !imageFile)}
+          disabled={isGenerating || (!prompt.trim() && !imageFile)}
           className="absolute right-1.5 p-1.5 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:hover:bg-indigo-600 transition-colors"
         >
           <Send className="w-4 h-4" />
