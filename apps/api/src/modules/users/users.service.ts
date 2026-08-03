@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { prisma, User, UserSettings } from '@vega3d/database';
+import * as bcrypt from 'bcryptjs';
 
 @Injectable()
 export class UsersService {
