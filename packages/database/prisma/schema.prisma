@@ -124,6 +124,10 @@ model Project {
   files       File[]
   history     ProjectHistory[]
   tags        Tag[]    @relation("ProjectTags")
+  
+  uploadJobs  UploadJob[]
+  assets      Asset[]
+  generations Generation[]
 }
 
 model Tag {
@@ -283,6 +287,7 @@ model Asset {
 
   history      AssetHistory[]
   generation   Generation?
+  viewerHistory ViewerHistory[]
 
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt

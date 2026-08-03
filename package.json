@@ -4,6 +4,7 @@
   "private": true,
   "description": "Plataforma de Geração de Ativos 3D por IA",
   "scripts": {
+    "postinstall": "pnpm --filter @vega3d/database db:generate",
     "build": "turbo run build",
     "dev": "turbo run dev",
     "lint": "turbo run lint",
