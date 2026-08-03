@@ -17,7 +17,7 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
     if (redisUrl) {
       this.redisClient = new Redis(redisUrl);
       this.redisClient.on('connect', () => this.logger.log('Redis connected successfully', 'CacheService'));
-      this.redisClient.on('error', (err) => this.logger.error('Redis connection error', err, 'CacheService'));
+      this.redisClient.on('error', (err) => this.logger.error('Redis connection error', err.stack || err.message, 'CacheService'));
     }
   }
 

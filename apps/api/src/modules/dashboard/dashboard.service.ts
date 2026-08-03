@@ -6,7 +6,7 @@ export class DashboardService {
   async getSummary(userId: string) {
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { credits: true, storageLimit: true, lastActive: true },
+      select: { credits: true, storageLimit: true },
     });
 
     const totalProjects = await prisma.project.count({
