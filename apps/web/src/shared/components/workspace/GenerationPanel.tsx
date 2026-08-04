@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useState } from 'react';
-import { Image as ImageIcon, Box, Type, PlaySquare, UploadCloud, ChevronDown, Check, Coins } from 'lucide-react';
+import { Image as ImageIcon, Box, Type, PlaySquare, UploadCloud, ChevronDown, Check, Coins, Globe } from 'lucide-react';
 
 export function GenerationPanel() {
   const [activeTab, setActiveTab] = useState<'image' | 'model' | 'text' | 'animate'>('image');
