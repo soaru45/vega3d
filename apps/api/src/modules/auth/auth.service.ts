@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, ConflictException, BadRequestException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException, BadRequestException, InternalServerErrorException, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcryptjs';
@@ -8,6 +8,7 @@ import { AuditService } from '../audit/audit.service';
 
 @Injectable()
 export class AuthService {
+  private readonly sysLogger = new Logger(AuthService.name);
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
@@ -24,23 +25,29 @@ export class AuthService {
        throw new BadRequestException('Senha deve ter no mínimo 8 caracteres');
     }
 
-    const existingUser = await prisma.user.findFirst({
-      where: { OR: [{ email: data.email }, { username: data.username }] }
-    });
-    if (existingUser) throw new ConflictException('Email ou Username já em uso');
+    try {
+      const existingUser = await prisma.user.findFirst({
+        where: { OR: [{ email: data.email }, { username: data.username }] }
+      });
+      if (existingUser) throw new ConflictException('Email ou Username já em uso');
 
-    const passwordHash = await bcrypt.hash(data.password, 12);
-    const user = await prisma.user.create({
-      data: {
-        email: data.email,
-        username: data.username,
-        name: data.name,
-        passwordHash,
-      }
-    });
+      const passwordHash = await bcrypt.hash(data.password, 12);
+      const user = await prisma.user.create({
+        data: {
+          email: data.email,
+          username: data.username,
+          name: data.name,
+          passwordHash,
+        }
+      });
 
-    await this.auditService.logEvent(user.id, 'USER_REGISTERED', ipAddress, userAgent);
-    return this.createSessionAndTokens(user.id, user.email, user.role, ipAddress, userAgent);
+      await this.auditService.logEvent(user.id, 'USER_REGISTERED', ipAddress, userAgent);
+      return await this.createSessionAndTokens(user.id, user.email, user.role, ipAddress, userAgent);
+    } catch (error) {
+      this.sysLogger.error(`Error during registration: ${error.message}`, error.stack);
+      if (error instanceof ConflictException) throw error;
+      throw new InternalServerErrorException('Erro interno ao tentar registrar o usuário.');
+    }
   }
 
   async login(data: any, ipAddress?: string, userAgent?: string) {
@@ -62,7 +69,7 @@ export class AuthService {
   private async createSessionAndTokens(userId: string, email: string, role: string, ipAddress?: string, userAgent?: string) {
     const payload = { sub: userId, email, role };
     const accessToken = this.jwtService.sign(payload);
-    const refreshSecret = this.configService.get<string>('JWT_REFRESH_SECRET');
+    const refreshSecret = this.configService.get<string>('JWT_REFRESH_SECRET') || 'default_refresh_secret_123_!@#';
     const refreshToken = this.jwtService.sign(payload, { secret: refreshSecret, expiresIn: '7d' });
 
     const session = await prisma.session.create({
