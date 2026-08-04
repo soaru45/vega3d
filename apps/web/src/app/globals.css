@@ -2,7 +2,65 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  background-color: #0f172a; /* Slate 900 for a dark default */
-  color: #f8fafc; /* Slate 50 */
+@layer base {
+  :root {
+    --background: #000000;
+    --foreground: #ffffff;
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --glass-bg: rgba(10, 10, 15, 0.4);
+    
+    --neon-blue: #00f0ff;
+    --neon-purple: #b026ff;
+  }
+
+  * {
+    border-color: var(--glass-border);
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    background-image: radial-gradient(circle at 50% -20%, rgba(176, 38, 255, 0.15), rgba(0, 0, 0, 1) 60%);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* O Segredo do Vidro Espacial (Vision Pro) */
+  .glass-panel {
+    background: var(--glass-bg);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+  }
+
+  /* Barras de rolagem invisíveis mas funcionais */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    background: linear-gradient(to right, #ffffff, #a0a0a0);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  
+  .text-gradient-neon {
+    background: linear-gradient(to right, var(--neon-blue), var(--neon-purple));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
 }
