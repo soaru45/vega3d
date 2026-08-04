@@ -3,8 +3,12 @@
 import Link from 'next/link';
 import { Button } from '@vega3d/ui';
 import { Box, Sparkles, Zap, Globe, Cpu, ArrowRight } from 'lucide-react';
-import { Hero3D } from '@/shared/components/landing/Hero3D';
+import dynamic from 'next/dynamic';
 import { motion } from 'framer-motion';
+
+const Hero3D = dynamic(() => import('@/shared/components/landing/Hero3D').then((mod) => mod.Hero3D), {
+  ssr: false,
+});
 
 import { PricingCards } from '@/shared/components/landing/PricingCards';
 

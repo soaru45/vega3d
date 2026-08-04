@@ -84,7 +84,7 @@ function FloatingParticles({ count = 200 }) {
   });
 
   return (
-    <instancedMesh ref={mesh} args={[undefined, undefined, count]} position={[0, 0, -20]}>
+    <instancedMesh ref={mesh} args={[null as any, null as any, count]} position={[0, 0, -20]}>
       <dodecahedronGeometry args={[0.2, 0]} />
       <meshBasicMaterial color="#b026ff" />
     </instancedMesh>
