@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { useState, useRef } from 'react';
 import { Image as ImageIcon, Box, Type, PlaySquare, UploadCloud, ChevronDown, Check, Coins, Globe, Loader2, Key } from 'lucide-react';
+import { useWorkspaceStore } from '../stores/useWorkspaceStore';
 
 export function GenerationPanel() {
   const [activeTab, setActiveTab] = useState<'image' | 'text'>('image');
@@ -8,12 +9,14 @@ export function GenerationPanel() {
   const [settingsOpen, setSettingsOpen] = useState(true); // Default open for API key
   const [partsToggle, setPartsToggle] = useState(false);
   const [texture8k, setTexture8k] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false);
   
   // States for forms
   const [apiKey, setApiKey] = useState('');
   const [prompt, setPrompt] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+  // Global state
+  const { isGenerating, setIsGenerating, setModelUrl, setProgress } = useWorkspaceStore();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -27,9 +30,9 @@ export function GenerationPanel() {
     }
   };
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     if (!apiKey) {
-      alert("Por favor, insira uma API Key nas configurações gerais.");
+      alert("Por favor, insira sua Tripo3D API Key nas configurações gerais.");
       setSettingsOpen(true);
       return;
     }
@@ -45,12 +48,96 @@ export function GenerationPanel() {
     }
 
     setIsGenerating(true);
-    
-    // Simulate generation process
-    setTimeout(() => {
+    setModelUrl(null);
+    setProgress(0);
+
+    try {
+      let imageToken = '';
+
+      if (activeTab === 'image' && selectedFile) {
+        setProgress(10);
+        // 1. Upload image to Tripo3D
+        const formData = new FormData();
+        formData.append('file', selectedFile);
+        
+        const uploadRes = await fetch('https://api.tripo3d.ai/v2/openapi/upload', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+          },
+          body: formData
+        });
+        
+        const uploadData = await uploadRes.json();
+        if (uploadData.code !== 0) throw new Error(uploadData.message || 'Erro no upload da imagem');
+        
+        imageToken = uploadData.data.image_token;
+      }
+
+      setProgress(30);
+
+      // 2. Create Task
+      const taskPayload = activeTab === 'image' 
+        ? { type: 'image_to_model', file: { type: selectedFile?.type.split('/')[1] === 'png' ? 'png' : 'jpg', file_token: imageToken } }
+        : { type: 'text_to_model', prompt: prompt };
+
+      const createRes = await fetch('https://api.tripo3d.ai/v2/openapi/task', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(taskPayload)
+      });
+
+      const createData = await createRes.json();
+      if (createData.code !== 0) throw new Error(createData.message || 'Erro ao criar tarefa de geração');
+      
+      const taskId = createData.data.task_id;
+      
+      setProgress(40);
+
+      // 3. Poll for result
+      let pollCount = 0;
+      const pollInterval = setInterval(async () => {
+        try {
+          pollCount++;
+          // Aumenta o progresso falsamente pra dar feedback de que tá rodando
+          setProgress(Math.min(40 + (pollCount * 2), 95));
+
+          const pollRes = await fetch(`https://api.tripo3d.ai/v2/openapi/task/${taskId}`, {
+            headers: {
+              'Authorization': `Bearer ${apiKey}`
+            }
+          });
+          const pollData = await pollRes.json();
+
+          if (pollData.code === 0) {
+            const status = pollData.data.status;
+            if (status === 'success') {
+              clearInterval(pollInterval);
+              setModelUrl(pollData.data.output.model);
+              setProgress(100);
+              setIsGenerating(false);
+            } else if (status === 'failed' || status === 'cancelled') {
+              clearInterval(pollInterval);
+              throw new Error('Geração falhou ou foi cancelada no Tripo3D');
+            }
+            // If running, queued, etc, just keep polling
+          }
+        } catch (pollErr: any) {
+          clearInterval(pollInterval);
+          setIsGenerating(false);
+          alert('Erro durante a checagem da IA: ' + pollErr.message);
+        }
+      }, 3000);
+
+    } catch (err: any) {
+      console.error(err);
+      alert(err.message || 'Ocorreu um erro inesperado');
       setIsGenerating(false);
-      alert("Modelo gerado com sucesso! (Simulação)");
-    }, 4000);
+      setProgress(0);
+    }
   };
 
   return (
@@ -190,7 +277,7 @@ export function GenerationPanel() {
               <div className="p-4 bg-[#111] border border-t-0 border-white/5 rounded-b-lg -mt-1 flex flex-col gap-3">
                 <label className="text-xs text-slate-400 flex items-center gap-1.5">
                   <Key className="w-3.5 h-3.5" />
-                  Insira sua API Key
+                  Insira sua Tripo API Key
                 </label>
                 <input 
                   type="password"
@@ -251,16 +338,16 @@ export function GenerationPanel() {
         </div>
 
         {/* Footer Fixed Button */}
-        <div className="absolute bottom-0 left-0 right-0 p-5 bg-gradient-to-t from-[#151515] via-[#151515] to-transparent pt-10">
+        <div className="absolute bottom-0 left-0 right-0 p-5 bg-gradient-to-t from-[#151515] via-[#151515] to-transparent pt-10 pointer-events-none">
            <button 
              onClick={handleGenerate}
              disabled={isGenerating}
-             className="w-full flex items-center justify-center gap-2 bg-tripo-yellow hover:bg-[#e5b400] disabled:bg-tripo-yellow/50 disabled:cursor-not-allowed text-black font-bold py-3 rounded-full shadow-[0_0_20px_rgba(255,200,0,0.15)] transition-all transform active:scale-95"
+             className="w-full flex items-center justify-center gap-2 bg-tripo-yellow hover:bg-[#e5b400] disabled:bg-tripo-yellow/50 disabled:cursor-not-allowed text-black font-bold py-3 rounded-full shadow-[0_0_20px_rgba(255,200,0,0.15)] transition-all transform active:scale-95 pointer-events-auto"
            >
              {isGenerating ? (
                <>
                  <Loader2 className="w-5 h-5 animate-spin" />
-                 Gerando modelo...
+                 Gerando modelo na IA...
                </>
              ) : (
                <>
