@@ -20,6 +20,7 @@
     "@nestjs/platform-express": "^10.0.0",
     "@nestjs/swagger": "^7.3.1",
     "@nestjs/throttler": "^5.1.2",
+    "@prisma/client": "^5.22.0",
     "@vega3d/ai-contracts": "workspace:*",
     "@vega3d/core-types": "workspace:*",
     "@vega3d/database": "workspace:*",
