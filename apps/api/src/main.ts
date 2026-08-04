@@ -25,7 +25,7 @@ async function bootstrap() {
   const port = configService.get<number>('API_PORT');
   
   app.enableCors({ 
-    origin: frontendUrl, 
+    origin: true, 
     credentials: true,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
   });
