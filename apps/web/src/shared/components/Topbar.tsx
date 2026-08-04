@@ -7,21 +7,21 @@ export function Topbar() {
     <header className="flex h-14 items-center justify-between border-b border-white/5 bg-[#141414] px-4 md:px-6">
       
       {/* Esquerda: Logo e Navegação */}
-      <div className="flex items-center gap-6">
+      <div className="flex items-center gap-6 shrink-0">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2">
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600">
+        <Link href="/" className="flex items-center gap-2 shrink-0">
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 shrink-0">
             <Hexagon className="h-4 w-4 text-white fill-white" />
           </div>
-          <span className="text-lg font-bold tracking-tight text-white uppercase">Vega 3D</span>
+          <span className="text-lg font-bold tracking-tight text-white uppercase whitespace-nowrap">Vega 3D</span>
         </Link>
 
         {/* Separator */}
         <div className="h-4 w-px bg-white/10 hidden md:block"></div>
 
         {/* Links Principais */}
-        <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
-          <Link href="/dashboard" className="text-yellow-400 flex items-center gap-1">
+        <nav className="hidden md:flex items-center gap-6 text-sm font-medium whitespace-nowrap">
+          <Link href="/dashboard" className="text-tripo-yellow flex items-center gap-1">
             Espaço 3D
             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
           </Link>
@@ -33,7 +33,7 @@ export function Topbar() {
       </div>
 
       {/* Direita: Ações e Perfil */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4 shrink-0">
         
         {/* DCC Bridge */}
         <button className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 text-xs font-medium text-slate-300 transition-colors border border-white/10">
@@ -66,8 +66,8 @@ export function Topbar() {
           </button>
           
           {/* Avatar Placeholder */}
-          <div className="h-7 w-7 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 overflow-hidden ml-1 flex items-center justify-center border border-white/20 cursor-pointer">
-            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" alt="User" className="w-full h-full object-cover" />
+          <div className="h-7 w-7 min-w-[28px] min-h-[28px] rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 overflow-hidden ml-1 flex items-center justify-center border border-white/20 cursor-pointer shrink-0">
+            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" alt="User" className="w-full h-full object-cover shrink-0" />
           </div>
         </div>
 

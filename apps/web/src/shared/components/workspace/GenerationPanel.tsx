@@ -1,56 +1,94 @@
 import * as React from 'react';
-import { useState } from 'react';
-import { Image as ImageIcon, Box, Type, PlaySquare, UploadCloud, ChevronDown, Check, Coins, Globe } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { Image as ImageIcon, Box, Type, PlaySquare, UploadCloud, ChevronDown, Check, Coins, Globe, Loader2, Key } from 'lucide-react';
 
 export function GenerationPanel() {
-  const [activeTab, setActiveTab] = useState<'image' | 'model' | 'text' | 'animate'>('image');
+  const [activeTab, setActiveTab] = useState<'image' | 'text'>('image');
   const [modelType, setModelType] = useState<'hd' | 'smart'>('hd');
-  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(true); // Default open for API key
   const [partsToggle, setPartsToggle] = useState(false);
   const [texture8k, setTexture8k] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  
+  // States for forms
+  const [apiKey, setApiKey] = useState('');
+  const [prompt, setPrompt] = useState('');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setSelectedFile(e.target.files[0]);
+    }
+  };
+
+  const handleGenerate = () => {
+    if (!apiKey) {
+      alert("Por favor, insira uma API Key nas configurações gerais.");
+      setSettingsOpen(true);
+      return;
+    }
+    
+    if (activeTab === 'image' && !selectedFile) {
+      alert("Por favor, faça o upload de uma imagem primeiro.");
+      return;
+    }
+
+    if (activeTab === 'text' && !prompt) {
+      alert("Por favor, digite um prompt.");
+      return;
+    }
+
+    setIsGenerating(true);
+    
+    // Simulate generation process
+    setTimeout(() => {
+      setIsGenerating(false);
+      alert("Modelo gerado com sucesso! (Simulação)");
+    }, 4000);
+  };
 
   return (
-    <aside className="w-[340px] flex-shrink-0 flex bg-[#1a1b1e] border-r border-white/5 overflow-hidden shadow-2xl relative z-10 m-2 rounded-xl h-[calc(100vh-80px)]">
+    <aside className="w-[340px] min-w-[340px] max-w-[340px] flex-shrink-0 flex bg-tripo-panel border-r border-white/5 overflow-hidden shadow-2xl relative z-10 m-2 rounded-xl h-[calc(100vh-80px)]">
       
       {/* Side Vertical Tabs */}
-      <div className="w-[60px] bg-[#141414] border-r border-white/5 flex flex-col items-center py-4 gap-6">
+      <div className="w-[60px] min-w-[60px] bg-tripo-tab border-r border-white/5 flex flex-col items-center py-4 gap-6 shrink-0">
         <button 
           onClick={() => setActiveTab('image')}
           className={`flex flex-col items-center gap-1.5 transition-colors ${activeTab === 'image' ? 'text-white' : 'text-slate-500 hover:text-slate-300'}`}
         >
-          <div className={`p-2 rounded-lg ${activeTab === 'image' ? 'bg-indigo-500/20 text-indigo-400' : ''}`}>
+          <div className={`p-2 rounded-lg transition-colors ${activeTab === 'image' ? 'bg-indigo-500/20 text-indigo-400' : ''}`}>
             <ImageIcon className="w-5 h-5" />
           </div>
           <span className="text-[10px] font-medium leading-none">Imagem</span>
         </button>
         
         <button 
-          onClick={() => setActiveTab('model')}
-          className={`flex flex-col items-center gap-1.5 transition-colors ${activeTab === 'model' ? 'text-white' : 'text-slate-500 hover:text-slate-300'}`}
+          onClick={() => setActiveTab('text')}
+          className={`flex flex-col items-center gap-1.5 transition-colors ${activeTab === 'text' ? 'text-white' : 'text-slate-500 hover:text-slate-300'}`}
         >
-          <div className={`p-2 rounded-lg ${activeTab === 'model' ? 'bg-indigo-500/20 text-indigo-400' : ''}`}>
+          <div className={`p-2 rounded-lg transition-colors ${activeTab === 'text' ? 'bg-indigo-500/20 text-indigo-400' : ''}`}>
+            <Type className="w-5 h-5" />
+          </div>
+          <span className="text-[10px] font-medium leading-none">Texto</span>
+        </button>
+
+        <div className="w-8 h-px bg-white/10 my-1"></div>
+        
+        <button className="flex flex-col items-center gap-1.5 text-slate-600 cursor-not-allowed" title="Em breve">
+          <div className="p-2 rounded-lg">
             <Box className="w-5 h-5" />
           </div>
           <span className="text-[10px] font-medium leading-none">Modelo</span>
         </button>
         
-        <div className="w-8 h-px bg-white/10 my-1"></div>
-        
-        <button 
-          onClick={() => setActiveTab('text')}
-          className={`flex flex-col items-center gap-1.5 transition-colors ${activeTab === 'text' ? 'text-white' : 'text-slate-500 hover:text-slate-300'}`}
-        >
-          <div className={`p-2 rounded-lg ${activeTab === 'text' ? 'bg-indigo-500/20 text-indigo-400' : ''}`}>
-            <Type className="w-5 h-5" />
-          </div>
-          <span className="text-[10px] font-medium leading-none">Texto</span>
-        </button>
-        
-        <button 
-          onClick={() => setActiveTab('animate')}
-          className={`flex flex-col items-center gap-1.5 transition-colors ${activeTab === 'animate' ? 'text-white' : 'text-slate-500 hover:text-slate-300'}`}
-        >
-          <div className={`p-2 rounded-lg ${activeTab === 'animate' ? 'bg-indigo-500/20 text-indigo-400' : ''}`}>
+        <button className="flex flex-col items-center gap-1.5 text-slate-600 cursor-not-allowed" title="Em breve">
+          <div className="p-2 rounded-lg">
             <PlaySquare className="w-5 h-5" />
           </div>
           <span className="text-[10px] font-medium leading-none">Animar</span>
@@ -58,103 +96,140 @@ export function GenerationPanel() {
       </div>
 
       {/* Main Panel Content */}
-      <div className="flex-1 flex flex-col h-full bg-[#1a1b1e] relative">
+      <div className="flex-1 flex flex-col h-full bg-tripo-panel relative min-w-0">
         
         {/* Header Title */}
-        <div className="px-5 pt-5 pb-3 flex items-center gap-2">
+        <div className="px-5 pt-5 pb-3 flex items-center gap-2 shrink-0">
           <SparkleIcon />
-          <h2 className="text-sm font-semibold text-white">Gerar modelo</h2>
+          <h2 className="text-sm font-semibold text-white whitespace-nowrap overflow-hidden text-ellipsis">Gerar modelo</h2>
         </div>
 
         {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto px-5 pb-24 custom-scrollbar">
           
           {/* HD / Smart Toggle */}
-          <div className="flex bg-black/40 rounded-full p-1 mb-5 border border-white/5">
+          <div className="flex bg-black/40 rounded-full p-1 mb-5 border border-white/5 shrink-0">
             <button 
               onClick={() => setModelType('hd')}
-              className={`flex-1 py-1.5 text-xs font-semibold rounded-full transition-all ${modelType === 'hd' ? 'bg-white text-black shadow' : 'text-slate-400 hover:text-white'}`}
+              className={`flex-1 py-1.5 text-xs font-semibold rounded-full transition-all ${modelType === 'hd' ? 'bg-[#333] text-white shadow' : 'text-slate-400 hover:text-white'}`}
             >
               Modelo HD
             </button>
             <button 
               onClick={() => setModelType('smart')}
-              className={`flex-1 py-1.5 text-xs font-semibold rounded-full transition-all flex items-center justify-center gap-1 ${modelType === 'smart' ? 'bg-white text-black shadow' : 'text-slate-400 hover:text-white'}`}
+              className={`flex-1 py-1.5 text-xs font-semibold rounded-full transition-all flex items-center justify-center gap-1 ${modelType === 'smart' ? 'bg-[#333] text-white shadow' : 'text-slate-400 hover:text-white'}`}
             >
               Malha Smart ⚡
             </button>
           </div>
 
-          {/* Upload Area */}
-          <div className="border border-indigo-500/30 bg-indigo-500/5 rounded-xl p-1 mb-6 group cursor-pointer hover:border-indigo-500/50 transition-colors">
-            {/* Top Toolbar in upload */}
-            <div className="flex items-center gap-1 p-2 mb-2">
-              <button className="p-1.5 rounded bg-white/5 hover:bg-white/10 text-white"><ImageIcon className="w-4 h-4" /></button>
-              <button className="p-1.5 rounded hover:bg-white/5 text-slate-400"><Box className="w-4 h-4" /></button>
-              <div className="flex-1"></div>
-              <button className="p-1.5 rounded hover:bg-white/5 text-slate-400"><Type className="w-4 h-4" /></button>
-            </div>
-            
-            <div className="border-2 border-dashed border-white/10 mx-2 mb-2 rounded-lg h-32 flex flex-col items-center justify-center bg-black/20 group-hover:bg-black/30 transition-colors relative overflow-hidden">
-               <UploadCloud className="w-6 h-6 text-slate-400 mb-2" />
-               <span className="text-sm font-medium text-white">Upload</span>
-               <span className="text-[10px] text-slate-500 mt-1 max-w-[140px] text-center leading-tight">JPG, PNG, WEBP, Tamanho &lt; 20MB</span>
-            </div>
+          {/* Dynamic Area: Image Upload or Text Prompt */}
+          <div className="shrink-0 mb-6">
+            {activeTab === 'image' ? (
+              <div 
+                onClick={handleUploadClick}
+                className={`border bg-indigo-500/5 rounded-xl p-1 group cursor-pointer transition-colors ${selectedFile ? 'border-indigo-500' : 'border-indigo-500/30 hover:border-indigo-500/50'}`}
+              >
+                {/* Hidden File Input */}
+                <input 
+                  type="file" 
+                  ref={fileInputRef} 
+                  hidden 
+                  accept="image/jpeg, image/png, image/webp" 
+                  onChange={handleFileChange} 
+                />
 
-            <button className="w-full py-2 text-xs font-semibold text-yellow-500 flex items-center justify-center gap-1 hover:text-yellow-400">
-              Gerar imagem para 3D &gt;
-            </button>
+                <div className="flex items-center gap-1 p-2 mb-2">
+                  <button className="p-1.5 rounded bg-white/5 text-white"><ImageIcon className="w-4 h-4" /></button>
+                </div>
+                
+                <div className="border-2 border-dashed border-white/10 mx-2 mb-2 rounded-lg h-32 flex flex-col items-center justify-center bg-black/20 group-hover:bg-black/30 transition-colors relative overflow-hidden px-2 text-center">
+                   {selectedFile ? (
+                     <>
+                        <Check className="w-6 h-6 text-green-400 mb-2" />
+                        <span className="text-sm font-medium text-white truncate w-full">{selectedFile.name}</span>
+                        <span className="text-[10px] text-green-400 mt-1">Pronto para gerar</span>
+                     </>
+                   ) : (
+                     <>
+                        <UploadCloud className="w-6 h-6 text-slate-400 mb-2" />
+                        <span className="text-sm font-medium text-white">Upload</span>
+                        <span className="text-[10px] text-slate-500 mt-1 max-w-[140px] leading-tight">JPG, PNG, WEBP, Tamanho &lt; 20MB</span>
+                     </>
+                   )}
+                </div>
+
+                <div className="w-full py-2 text-xs font-semibold text-tripo-yellow flex items-center justify-center gap-1 hover:text-yellow-400 transition-colors">
+                  Gerar a partir da imagem &gt;
+                </div>
+              </div>
+            ) : (
+              <div className="border border-indigo-500/30 bg-indigo-500/5 rounded-xl p-3 flex flex-col gap-2">
+                <label className="text-xs font-semibold text-slate-300">Prompt do Modelo</label>
+                <textarea 
+                  className="w-full bg-black/30 border border-white/10 rounded-lg p-3 text-sm text-white placeholder:text-slate-500 resize-none h-28 focus:outline-none focus:border-indigo-500 transition-colors custom-scrollbar"
+                  placeholder="Descreva o objeto 3D detalhadamente..."
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                />
+              </div>
+            )}
           </div>
 
           {/* Configurações gerais */}
-          <div className="mb-6">
-            <h3 className="text-xs font-semibold text-slate-400 mb-2">Configurações gerais</h3>
+          <div className="mb-6 shrink-0">
+            <h3 className="text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wider">Configurações gerais</h3>
             <button 
               onClick={() => setSettingsOpen(!settingsOpen)}
-              className="w-full flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/5 hover:bg-white/10 transition-colors"
+              className="w-full flex items-center justify-between p-3 rounded-lg bg-[#222] border border-white/5 hover:bg-[#2a2a2a] transition-colors"
             >
-              <span className="text-sm text-slate-200 font-medium">Geometria e textura</span>
+              <span className="text-sm text-slate-200 font-medium">Chave da API</span>
               <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${settingsOpen ? 'rotate-180' : ''}`} />
             </button>
             {settingsOpen && (
-              <div className="p-3 bg-black/20 border border-t-0 border-white/5 rounded-b-lg -mt-1 text-xs text-slate-400">
-                Opções avançadas de malha e topologia seriam inseridas aqui.
+              <div className="p-4 bg-[#111] border border-t-0 border-white/5 rounded-b-lg -mt-1 flex flex-col gap-3">
+                <label className="text-xs text-slate-400 flex items-center gap-1.5">
+                  <Key className="w-3.5 h-3.5" />
+                  Insira sua API Key
+                </label>
+                <input 
+                  type="password"
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
+                  placeholder="sk-..."
+                  className="w-full bg-black border border-white/10 rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:border-tripo-yellow transition-colors"
+                />
+                <p className="text-[10px] text-slate-500 leading-tight">Sua chave é salva apenas localmente no estado da sessão atual.</p>
               </div>
             )}
           </div>
 
           {/* Apenas para assinantes */}
-          <div>
+          <div className="shrink-0">
             <div className="flex items-center gap-2 mb-3">
-               <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
-               <h3 className="text-xs font-semibold text-yellow-500">Apenas para assinantes</h3>
+               <div className="w-2 h-2 rounded-full bg-tripo-yellow shadow-[0_0_8px_rgba(255,200,0,0.8)]"></div>
+               <h3 className="text-xs font-semibold text-tripo-yellow uppercase tracking-wider">Apenas Assinantes</h3>
             </div>
 
             <div className="space-y-4">
               {/* Gerar em Partes */}
               <div className="flex items-center justify-between">
-                <div>
+                <div className="flex-1 pr-2">
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-slate-200">Gerar em Partes</span>
                     <span className="text-[9px] px-1.5 py-0.5 rounded bg-pink-500/20 text-pink-400 font-bold uppercase tracking-wider">New</span>
                   </div>
-                  <span className="text-[10px] text-indigo-400 cursor-pointer flex items-center gap-1 mt-0.5 hover:text-indigo-300">
-                    <SparkleIcon /> Teste da nova função &gt;
-                  </span>
                 </div>
                 <Toggle checked={partsToggle} onChange={() => setPartsToggle(!partsToggle)} />
               </div>
 
               {/* Textura 8K */}
               <div className="flex items-center justify-between">
-                <div>
+                <div className="flex-1 pr-2">
                   <div className="flex items-center gap-1">
                     <span className="text-sm text-slate-200">Textura 8K</span>
                     <span className="text-slate-500 text-xs cursor-help">ⓘ</span>
                   </div>
-                  <span className="text-[10px] text-indigo-400 cursor-pointer flex items-center gap-1 mt-0.5 hover:text-indigo-300">
-                    <SparkleIcon /> Textura 8K (Exclusivo Max) - Teste grátis
-                  </span>
                 </div>
                 <Toggle checked={texture8k} onChange={() => setTexture8k(!texture8k)} />
               </div>
@@ -163,28 +238,39 @@ export function GenerationPanel() {
               <div className="flex items-center justify-between pt-2">
                 <div className="flex items-center gap-1">
                   <span className="text-sm text-slate-200">Privacidade</span>
-                  <span className="text-slate-500 text-xs cursor-help">ⓘ</span>
                 </div>
-                <button className="flex items-center gap-1 text-sm text-slate-300 hover:text-white">
+                <button className="flex items-center gap-1 text-sm text-slate-300 hover:text-white bg-black/40 px-2 py-1 rounded border border-white/5">
                   <Globe className="w-3.5 h-3.5" />
                   Público
                   <ChevronDown className="w-3.5 h-3.5 ml-1" />
                 </button>
               </div>
-
             </div>
           </div>
 
         </div>
 
         {/* Footer Fixed Button */}
-        <div className="absolute bottom-0 left-0 right-0 p-5 bg-gradient-to-t from-[#1a1b1e] via-[#1a1b1e] to-transparent pt-10">
-           <button className="w-full flex items-center justify-center gap-2 bg-yellow-500 hover:bg-yellow-400 text-black font-bold py-3 rounded-full shadow-[0_0_15px_rgba(234,179,8,0.2)] transition-all transform hover:scale-[1.02]">
-             Gerar modelo
-             <div className="flex items-center bg-black/10 px-1.5 py-0.5 rounded-full ml-1">
-               <Coins className="w-3.5 h-3.5 mr-1" />
-               <span className="text-sm">55</span>
-             </div>
+        <div className="absolute bottom-0 left-0 right-0 p-5 bg-gradient-to-t from-[#151515] via-[#151515] to-transparent pt-10">
+           <button 
+             onClick={handleGenerate}
+             disabled={isGenerating}
+             className="w-full flex items-center justify-center gap-2 bg-tripo-yellow hover:bg-[#e5b400] disabled:bg-tripo-yellow/50 disabled:cursor-not-allowed text-black font-bold py-3 rounded-full shadow-[0_0_20px_rgba(255,200,0,0.15)] transition-all transform active:scale-95"
+           >
+             {isGenerating ? (
+               <>
+                 <Loader2 className="w-5 h-5 animate-spin" />
+                 Gerando modelo...
+               </>
+             ) : (
+               <>
+                 Gerar modelo
+                 <div className="flex items-center bg-black/15 px-1.5 py-0.5 rounded-full ml-1 backdrop-blur-sm">
+                   <Coins className="w-3.5 h-3.5 mr-1" />
+                   <span className="text-sm">55</span>
+                 </div>
+               </>
+             )}
            </button>
         </div>
 
@@ -196,7 +282,7 @@ export function GenerationPanel() {
 // Helper components
 function SparkleIcon() {
   return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-indigo-400"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-indigo-400 shrink-0"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
   );
 }
 
@@ -204,9 +290,9 @@ function Toggle({ checked, onChange }: { checked: boolean, onChange: () => void 
   return (
     <button 
       onClick={onChange}
-      className={`w-9 h-5 rounded-full relative transition-colors border border-white/5 ${checked ? 'bg-indigo-600' : 'bg-white/10'}`}
+      className={`w-10 h-5 rounded-full relative transition-colors border border-white/5 shrink-0 ${checked ? 'bg-[#FFC800]' : 'bg-[#333]'}`}
     >
-      <div className={`absolute top-0.5 w-3.5 h-3.5 rounded-full bg-white transition-transform ${checked ? 'left-[18px]' : 'left-0.5'}`} />
+      <div className={`absolute top-[1px] w-4 h-4 rounded-full bg-white transition-transform ${checked ? 'left-[22px]' : 'left-0.5'}`} />
     </button>
   );
 }

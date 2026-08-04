@@ -3,7 +3,7 @@ import { Hexagon, Maximize, MousePointer2, Focus, Video } from 'lucide-react';
 
 export function Viewport3D() {
   return (
-    <div className="flex-1 relative bg-[#141414] overflow-hidden flex items-center justify-center">
+    <div className="flex-1 relative bg-tripo-bg overflow-hidden flex items-center justify-center min-w-0">
       
       {/* Centro: Estado vazio */}
       <div className="flex flex-col items-center justify-center opacity-60">

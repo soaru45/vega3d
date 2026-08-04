@@ -21,6 +21,12 @@ const config: Config = {
           purple: '#b026ff',
           pink: '#ff007f',
         },
+        tripo: {
+          bg: '#000000',
+          panel: '#151515',
+          tab: '#0D0D0D',
+          yellow: '#FFC800',
+        },
         obsidian: '#050505',
         darkglass: 'rgba(10, 10, 10, 0.65)',
       },
