@@ -37,9 +37,7 @@ export interface ButtonProps
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant, size, asChild = false, ...props }, ref) => {
-    // Se não tivermos Slot do Radix instalado, vamos de tag normal.
-    // Usaremos HTML nativo para manter a biblioteca enxuta neste MVP.
-    const Comp = 'button';
+    const Comp = asChild ? Slot : 'button';
     return (
       <Comp
         className={cn(buttonVariants({ variant, size, className }))}
