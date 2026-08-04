@@ -4,6 +4,8 @@ import { Response, Request } from 'express';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { RegisterDto } from './dto/register.dto';
+import { LoginDto } from './dto/login.dto';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -12,7 +14,7 @@ export class AuthController {
 
   @Post('register')
   @ApiOperation({ summary: 'Registrar um novo usuário com senha forte' })
-  async register(@Body() body: any, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
+  async register(@Body() body: RegisterDto, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const { user, accessToken, refreshToken, sessionId } = await this.authService.register(
       body, 
       req.ip, 
@@ -25,7 +27,7 @@ export class AuthController {
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Login persistente retornando Cookies HTTP-Only' })
-  async login(@Body() body: any, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
+  async login(@Body() body: LoginDto, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const { user, accessToken, refreshToken, sessionId } = await this.authService.login(
       body,
       req.ip,
