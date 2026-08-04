@@ -46,24 +46,30 @@ export class AuthService {
     } catch (error) {
       this.sysLogger.error(`Error during registration: ${error.message}`, error.stack);
       if (error instanceof ConflictException) throw error;
-      throw new InternalServerErrorException('Erro interno ao tentar registrar o usuário.');
+      throw new InternalServerErrorException(`Erro interno: ${error.message}`);
     }
   }
 
   async login(data: any, ipAddress?: string, userAgent?: string) {
-    const user = await prisma.user.findFirst({
-      where: { OR: [{ email: data.identifier }, { username: data.identifier }] }
-    });
-    if (!user || !user.passwordHash) throw new UnauthorizedException('Credenciais inválidas');
+    try {
+      const user = await prisma.user.findFirst({
+        where: { OR: [{ email: data.identifier }, { username: data.identifier }] }
+      });
+      if (!user || !user.passwordHash) throw new UnauthorizedException('Credenciais inválidas');
 
-    const isMatch = await bcrypt.compare(data.password, user.passwordHash);
-    if (!isMatch) {
-       await this.auditService.logEvent(user.id, 'FAILED_LOGIN_ATTEMPT', ipAddress, userAgent);
-       throw new UnauthorizedException('Credenciais inválidas');
+      const isMatch = await bcrypt.compare(data.password, user.passwordHash);
+      if (!isMatch) {
+         await this.auditService.logEvent(user.id, 'FAILED_LOGIN_ATTEMPT', ipAddress, userAgent);
+         throw new UnauthorizedException('Credenciais inválidas');
+      }
+
+      await this.auditService.logEvent(user.id, 'USER_LOGGED_IN', ipAddress, userAgent);
+      return await this.createSessionAndTokens(user.id, user.email, user.role, ipAddress, userAgent);
+    } catch (error) {
+      this.sysLogger.error(`Error during login: ${error.message}`, error.stack);
+      if (error instanceof UnauthorizedException) throw error;
+      throw new InternalServerErrorException(`Erro interno: ${error.message}`);
     }
-
-    await this.auditService.logEvent(user.id, 'USER_LOGGED_IN', ipAddress, userAgent);
-    return this.createSessionAndTokens(user.id, user.email, user.role, ipAddress, userAgent);
   }
 
   private async createSessionAndTokens(userId: string, email: string, role: string, ipAddress?: string, userAgent?: string) {
