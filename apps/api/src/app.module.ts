@@ -21,8 +21,11 @@ import { AppLoggerService } from './common/logger/logger.service';
 import { CacheService } from './modules/cache/cache.service';
 import { QueueService } from './modules/queue/queue.service';
 
+import { GlobalModule } from './common/global.module';
+
 @Module({
   imports: [
+    GlobalModule,
     ConfigModule.forRoot({
       isGlobal: true,
       validate: validateEnv,
@@ -42,11 +45,5 @@ import { QueueService } from './modules/queue/queue.service';
     LibraryModule,
     AiModule,
   ],
-  providers: [
-    AppLoggerService,
-    CacheService,
-    QueueService,
-  ],
-  exports: [AppLoggerService, CacheService, QueueService],
 })
 export class AppModule {}
