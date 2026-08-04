@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button, Input } from '@vega3d/ui';
 import { CheckCircle2, XCircle } from 'lucide-react';
-import axios from 'axios';
 import { motion } from 'framer-motion';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
@@ -34,19 +33,27 @@ export default function RegisterPage() {
     setErrorMsg('');
     
     try {
-      const response = await axios.post(`${API_URL}/auth/register`, {
-        name,
-        username,
-        email,
-        password,
-        confirmPassword,
-      }, { withCredentials: true });
+      const response = await fetch(`${API_URL}/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name,
+          username,
+          email,
+          password,
+          confirmPassword,
+        }),
+      });
       
-      if (response.status === 201 || response.status === 200) {
+      const data = await response.json();
+      
+      if (response.ok) {
         router.push('/dashboard');
+      } else {
+        setErrorMsg(data.message || 'Erro ao criar conta. Usuário ou Email podem já estar em uso.');
       }
     } catch (err: any) {
-      setErrorMsg(err.response?.data?.message || 'Erro ao criar conta. Usuário ou Email podem já estar em uso.');
+      setErrorMsg('Erro de conexão com o servidor.');
     } finally {
       setLoading(false);
     }

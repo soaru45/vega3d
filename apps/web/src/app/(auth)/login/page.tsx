@@ -4,7 +4,6 @@ import * as React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button, Input } from '@vega3d/ui';
-import axios from 'axios';
 import { motion } from 'framer-motion';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
@@ -22,17 +21,22 @@ export default function LoginPage() {
     setErrorMsg('');
     
     try {
-      const response = await axios.post(`${API_URL}/auth/login`, {
-        identifier,
-        password,
-      }, { withCredentials: true });
+      const response = await fetch(`${API_URL}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ identifier, password }),
+      });
       
-      if (response.status === 200) {
+      const data = await response.json();
+      
+      if (response.ok) {
         // Redireciona para o app
         router.push('/dashboard');
+      } else {
+        setErrorMsg(data.message || 'Erro ao realizar login. Verifique suas credenciais.');
       }
     } catch (err: any) {
-      setErrorMsg(err.response?.data?.message || 'Erro ao realizar login. Verifique suas credenciais.');
+      setErrorMsg('Erro de conexão com o servidor.');
     } finally {
       setLoading(false);
     }
