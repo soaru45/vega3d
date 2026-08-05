@@ -27,7 +27,6 @@ export class AiController {
     @Body() body: { 
       prompt?: string; 
       projectId?: string;
-      nodeType?: string;
       texture8k?: string;
       partsGeneration?: string;
       autoRigging?: string;
@@ -45,7 +44,6 @@ export class AiController {
       prompt: body.prompt || 'Modelo gerado por imagem',
       projectId: body.projectId,
       imageUrl: tempUrl,
-      nodeType: body.nodeType || 'local',
       texture8k: body.texture8k === 'true',
       partsGeneration: body.partsGeneration === 'true',
       autoRigging: body.autoRigging === 'true'

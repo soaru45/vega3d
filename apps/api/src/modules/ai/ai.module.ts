@@ -3,7 +3,6 @@ import { BullModule } from '@nestjs/bullmq';
 import { AiController } from './ai.controller';
 import { AiService } from './ai.service';
 import { AiGateway } from './ai.gateway';
-import { TripoApiService } from './providers/tripo.service';
 
 @Module({
   imports: [
@@ -14,8 +13,7 @@ import { TripoApiService } from './providers/tripo.service';
   controllers: [AiController],
   providers: [
     AiService,
-    AiGateway,
-    TripoApiService
+    AiGateway
   ],
 })
 export class AiModule {}
