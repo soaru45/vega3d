@@ -3,6 +3,8 @@ import { useState, useRef } from 'react';
 import { Image as ImageIcon, Box, Type, PlaySquare, UploadCloud, ChevronDown, Check, Coins, Globe, Loader2, Key } from 'lucide-react';
 import { useWorkspaceStore } from '@/shared/stores/useWorkspaceStore';
 
+let globalGenerationCounter = 0;
+
 export function GenerationPanel() {
   const [activeTab, setActiveTab] = useState<'image' | 'text'>('image');
   const [modelType, setModelType] = useState<'hd' | 'smart'>('hd');
@@ -56,7 +58,10 @@ export function GenerationPanel() {
       setProgress(20);
 
       const categories = ['[VEHICLE]', '[OBJECT]', '[FURNITURE]', '[CHARACTER]'];
-      const finalCategory = categories[Math.floor(Math.random() * categories.length)];
+      
+      // Ciclo determinístico para NUNCA repetir o mesmo modelo seguido
+      const finalCategory = categories[globalGenerationCounter % categories.length];
+      globalGenerationCounter++;
 
       const mockAnalysis = `[INICIANDO ANÁLISE GEOMÉTRICA]
 - Classe de Objeto Detectada: Malha Complexa / Alta Resolução
