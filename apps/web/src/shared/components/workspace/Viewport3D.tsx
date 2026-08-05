@@ -1,13 +1,22 @@
 'use client';
 
 import * as React from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Script from 'next/script';
 import { MousePointer2, Focus, Video, Loader2 } from 'lucide-react';
 import { useWorkspaceStore } from '@/shared/stores/useWorkspaceStore';
 
 export function Viewport3D() {
-  const { isGenerating, progress, modelUrl } = useWorkspaceStore();
+  const { isGenerating, progress, modelUrl, analysisText } = useWorkspaceStore();
   const [modelViewerLoaded, setModelViewerLoaded] = React.useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll the analysis console
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [analysisText]);
 
   return (
     <div className="flex-1 relative bg-tripo-bg overflow-hidden flex items-center justify-center min-w-0">
@@ -61,6 +70,25 @@ export function Viewport3D() {
           </div>
           <h1 className="text-2xl font-bold text-white mb-2">Pronto para um novo modelo 3D?</h1>
           <p className="text-sm text-slate-400">Gere 3D instantaneamente a partir de imagem ou texto</p>
+        </div>
+      )}
+
+      {/* Console do Arquiteto (Gemini) */}
+      {isGenerating && analysisText && (
+        <div className="absolute inset-x-8 bottom-8 top-1/2 p-6 bg-black/60 backdrop-blur-md rounded-xl border border-tripo-yellow/30 shadow-[0_0_30px_rgba(202,240,15,0.1)] flex flex-col z-20 overflow-hidden">
+          <div className="flex items-center gap-2 mb-4 shrink-0">
+            <div className="w-2 h-2 rounded-full bg-tripo-yellow animate-pulse" />
+            <h3 className="text-tripo-yellow text-sm font-bold tracking-widest uppercase">Gemini Vision - Análise AAA</h3>
+          </div>
+          <div 
+            ref={scrollRef}
+            className="flex-1 overflow-y-auto pr-2 custom-scrollbar"
+          >
+            <p className="text-green-400 font-mono text-xs md:text-sm whitespace-pre-wrap leading-relaxed">
+              {analysisText}
+              <span className="inline-block w-2 h-4 bg-green-400 ml-1 animate-pulse" />
+            </p>
+          </div>
         </div>
       )}
 

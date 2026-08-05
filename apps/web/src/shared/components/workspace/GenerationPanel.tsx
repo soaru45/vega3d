@@ -6,16 +6,17 @@ import { useWorkspaceStore } from '@/shared/stores/useWorkspaceStore';
 export function GenerationPanel() {
   const [activeTab, setActiveTab] = useState<'image' | 'text'>('image');
   const [modelType, setModelType] = useState<'hd' | 'smart'>('hd');
-  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(true);
   const [partsToggle, setPartsToggle] = useState(false);
   const [texture8k, setTexture8k] = useState(false);
   
   // States for forms
+  const [apiKey, setApiKey] = useState('');
   const [prompt, setPrompt] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   // Global state
-  const { isGenerating, setIsGenerating, setModelUrl, setProgress } = useWorkspaceStore();
+  const { isGenerating, setIsGenerating, setModelUrl, setProgress, setAnalysisText } = useWorkspaceStore();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -30,35 +31,84 @@ export function GenerationPanel() {
   };
 
   const handleGenerate = async () => {
-    if (activeTab === 'image' && !selectedFile) {
-      alert("Por favor, faça o upload de uma imagem primeiro.");
+    if (!apiKey) {
+      alert("Por favor, insira sua Chave do Gemini (Gemini API Key) nas configurações.");
+      setSettingsOpen(true);
       return;
     }
 
-    if (activeTab === 'text' && !prompt) {
-      alert("Por favor, digite um prompt.");
+    if (activeTab === 'image' && !selectedFile) {
+      alert("Por favor, faça o upload de uma imagem primeiro.");
       return;
     }
 
     setIsGenerating(true);
     setModelUrl(null);
     setProgress(0);
+    setAnalysisText("Iniciando varredura geométrica e de materiais...\n");
 
-    // MODO SIMULAÇÃO ATIVADO: Sem APIs externas, sem custos, sem dor de cabeça.
-    let currentProgress = 0;
-    const interval = setInterval(() => {
-      currentProgress += Math.floor(Math.random() * 15) + 5;
-      
-      if (currentProgress >= 100) {
-        clearInterval(interval);
-        setProgress(100);
-        // Modelo 3D de alta qualidade gratuito para demonstração
-        setModelUrl('https://modelviewer.dev/shared-assets/models/Astronaut.glb');
-        setIsGenerating(false);
-      } else {
-        setProgress(currentProgress);
+    try {
+      // Import dynamic to avoid Next.js client-side errors if any
+      const { GoogleGenerativeAI } = await import('@google/generative-ai');
+      const genAI = new GoogleGenerativeAI(apiKey.trim());
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+      const promptText = `
+Você é o Arquiteto 3D Chefe de um estúdio de jogos AAA (como Rockstar para o GTA 6).
+Sua tarefa é analisar a imagem enviada com atenção a geometria, física, texturas (PBR) e materiais.
+Descreva como seria a modelagem 3D perfeita para este objeto no jogo (ex: contagem de polígonos, reflexividade, rugosidade, estilo).
+No FINAL da sua resposta, classifique o objeto em APENAS UMA dessas categorias EXATAMENTE como escrito, dentro de colchetes:
+[VEHICLE], [CHARACTER], [OBJECT], [FURNITURE] ou [NATURE].
+      `;
+
+      let imageParts: any = [];
+      if (activeTab === 'image' && selectedFile) {
+        // Convert File to Base64
+        const fileToGenerativePart = async (file: File) => {
+          return new Promise((resolve, reject) => {
+             const reader = new FileReader();
+             reader.onloadend = () => resolve({
+                inlineData: { data: (reader.result as string).split(',')[1], mimeType: file.type }
+             });
+             reader.onerror = reject;
+             reader.readAsDataURL(file);
+          });
+        };
+        const part = await fileToGenerativePart(selectedFile);
+        imageParts.push(part);
       }
-    }, 500);
+
+      setProgress(20);
+
+      // Call Gemini API Stream
+      const result = await model.generateContentStream([promptText, ...imageParts]);
+
+      let fullText = "";
+      for await (const chunk of result.stream) {
+        const chunkText = chunk.text();
+        fullText += chunkText;
+        setAnalysisText("Iniciando varredura geométrica e de materiais...\n\n" + fullText);
+        setProgress(Math.min(90, 20 + Math.floor(fullText.length / 20))); // Fake progress increment
+      }
+
+      setProgress(100);
+
+      // Determine the 3D model based on the keyword
+      let finalModel = 'https://modelviewer.dev/shared-assets/models/Astronaut.glb'; // Default
+      
+      if (fullText.includes('[VEHICLE]')) finalModel = 'https://modelviewer.dev/shared-assets/models/glTF-Sample-Models/2.0/ToyCar/glTF-Binary/ToyCar.glb';
+      else if (fullText.includes('[FURNITURE]')) finalModel = 'https://modelviewer.dev/shared-assets/models/Chair.glb';
+      else if (fullText.includes('[OBJECT]')) finalModel = 'https://modelviewer.dev/shared-assets/models/glTF-Sample-Models/2.0/DamagedHelmet/glTF-Binary/DamagedHelmet.glb';
+      
+      setModelUrl(finalModel);
+      setIsGenerating(false);
+
+    } catch (err: any) {
+      console.error(err);
+      alert('Erro na IA do Gemini: ' + err.message);
+      setIsGenerating(false);
+      setProgress(0);
+    }
   };
 
   return (
@@ -191,19 +241,23 @@ export function GenerationPanel() {
               onClick={() => setSettingsOpen(!settingsOpen)}
               className="w-full flex items-center justify-between p-3 rounded-lg bg-[#222] border border-white/5 hover:bg-[#2a2a2a] transition-colors"
             >
-              <span className="text-sm text-slate-200 font-medium">Estilo do Modelo</span>
+              <span className="text-sm text-slate-200 font-medium">Chave do Gemini</span>
               <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${settingsOpen ? 'rotate-180' : ''}`} />
             </button>
             {settingsOpen && (
               <div className="p-4 bg-[#111] border border-t-0 border-white/5 rounded-b-lg -mt-1 flex flex-col gap-3">
                 <label className="text-xs text-slate-400 flex items-center gap-1.5">
-                  Predefinição Visual
+                  <Key className="w-3.5 h-3.5" />
+                  Gemini API Key (Google AI Studio)
                 </label>
-                <select className="w-full bg-black border border-white/10 rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:border-tripo-yellow transition-colors">
-                  <option>Realista (PBR)</option>
-                  <option>Low Poly / Jogo</option>
-                  <option>Anime / Toon</option>
-                </select>
+                <input 
+                  type="password"
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
+                  placeholder="AIzaSy..."
+                  className="w-full bg-black border border-white/10 rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:border-tripo-yellow transition-colors"
+                />
+                <p className="text-[10px] text-slate-500 leading-tight">A IA do Gemini vai analisar a sua foto e arquitetar a complexidade do modelo 3D!</p>
               </div>
             )}
           </div>
