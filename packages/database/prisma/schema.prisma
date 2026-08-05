@@ -48,6 +48,9 @@ model User {
   viewerSetting          ViewerSetting?
   viewerHistory          ViewerHistory[]
   generations            Generation[]
+  
+  subscription           Subscription?
+  apiKeys                ApiKey[]
 }
 
 model Session {
@@ -366,5 +369,29 @@ model GenerationJob {
   providerJobId String?   // ID retornado pela Tripo3D ou outro provider
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
+}
+
+// === BILLING & API ===
+
+model Subscription {
+  id               String    @id @default(uuid())
+  userId           String    @unique
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stripeCustomerId String?   @unique
+  stripePriceId    String?
+  status           String    @default("inactive") // 'active', 'past_due', 'canceled'
+  currentPeriodEnd DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+}
+
+model ApiKey {
+  id         String    @id @default(uuid())
+  key        String    @unique
+  name       String
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lastUsedAt DateTime?
+  createdAt  DateTime  @default(now())
 }
 
