@@ -48,11 +48,35 @@ export function GenerationPanel() {
     setAnalysisText("Iniciando varredura geométrica e de materiais...\n");
 
     try {
+      const cleanApiKey = apiKey.trim();
+      
+      setProgress(10);
+
+      // Descobrir qual modelo a conta do usuário tem acesso
+      setAnalysisText("Verificando modelos disponíveis na sua conta Google...\n");
+      const modelsRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${cleanApiKey}`);
+      const modelsData = await modelsRes.json();
+      
+      let selectedModelName = "gemini-1.5-flash"; // default fallback
+      if (modelsData && modelsData.models) {
+        // Tentar encontrar 1.5 pro, 1.5 flash, ou pro-vision
+        const availableModels = modelsData.models.map((m: any) => m.name.replace('models/', ''));
+        if (availableModels.includes('gemini-1.5-pro')) selectedModelName = 'gemini-1.5-pro';
+        else if (availableModels.includes('gemini-1.5-flash')) selectedModelName = 'gemini-1.5-flash';
+        else if (availableModels.includes('gemini-1.5-pro-latest')) selectedModelName = 'gemini-1.5-pro-latest';
+        else if (availableModels.includes('gemini-pro-vision')) selectedModelName = 'gemini-pro-vision';
+        else if (availableModels.length > 0) {
+          // Pega o primeiro que suporte generateContent
+          selectedModelName = availableModels[0];
+        }
+      }
+
+      setAnalysisText(`Modelo selecionado: ${selectedModelName}\nIniciando varredura geométrica e de materiais...\n`);
+      
       // Import dynamic to avoid Next.js client-side errors if any
       const { GoogleGenerativeAI } = await import('@google/generative-ai');
-      const genAI = new GoogleGenerativeAI(apiKey.trim());
-      // O usuário paga o Gemini Pro, então vamos usar o modelo Pro super avançado
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+      const genAI = new GoogleGenerativeAI(cleanApiKey);
+      const model = genAI.getGenerativeModel({ model: selectedModelName });
 
       const promptText = `
 Você é o Arquiteto 3D Chefe de um estúdio de jogos AAA (como Rockstar para o GTA 6).
