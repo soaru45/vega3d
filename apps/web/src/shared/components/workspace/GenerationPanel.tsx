@@ -10,6 +10,7 @@ export function GenerationPanel() {
   const [activeTab, setActiveTab] = useState<'image' | 'text'>('image');
   const [modelType, setModelType] = useState<'hd' | 'smart'>('hd');
   const [settingsOpen, setSettingsOpen] = useState(true);
+  const [nodeType, setNodeType] = useState<'cloud' | 'local'>('cloud');
   const [partsToggle, setPartsToggle] = useState(false);
   const [texture8k, setTexture8k] = useState(false);
   const [autoRigging, setAutoRigging] = useState(false);
@@ -61,6 +62,7 @@ export function GenerationPanel() {
       if (prompt && activeTab === 'text') formData.append('prompt', prompt);
       
       formData.append('type', activeTab);
+      formData.append('nodeType', nodeType);
       formData.append('modelType', modelType);
       formData.append('texture8k', texture8k ? 'true' : 'false');
       formData.append('partsGeneration', partsToggle ? 'true' : 'false');
@@ -261,8 +263,37 @@ export function GenerationPanel() {
                <div className="w-2 h-2 rounded-full bg-tripo-yellow shadow-[0_0_8px_rgba(255,200,0,0.8)]"></div>
                <h3 className="text-xs font-semibold text-tripo-yellow uppercase tracking-wider">Apenas Assinantes</h3>
             </div>
+            <div className="px-4 py-4 space-y-4">
+              
+              {/* Node Selection (V3 Hybrid) */}
+              <div className="space-y-2 mb-4 p-3 bg-[#0a0a0a] rounded-lg border border-white/5">
+                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider block mb-2">Motor de Geração</label>
+                
+                <div 
+                  onClick={() => setNodeType('cloud')}
+                  className={`flex items-start gap-3 p-3 rounded-lg cursor-pointer transition-all ${nodeType === 'cloud' ? 'bg-indigo-500/10 border-indigo-500/30' : 'hover:bg-white/5 border-transparent'} border`}
+                >
+                  <Globe className={`w-5 h-5 mt-0.5 ${nodeType === 'cloud' ? 'text-indigo-400' : 'text-slate-500'}`} />
+                  <div>
+                    <h4 className={`text-sm font-bold ${nodeType === 'cloud' ? 'text-indigo-300' : 'text-slate-300'}`}>Tripo3D V2 (Cloud)</h4>
+                    <p className="text-[10px] text-slate-400 mt-1">Integração Oficial Pro. Máxima Qualidade. Texturas Ultra.</p>
+                  </div>
+                  {nodeType === 'cloud' && <Check className="w-4 h-4 text-indigo-400 ml-auto mt-1" />}
+                </div>
 
-            <div className="space-y-4">
+                <div 
+                  onClick={() => setNodeType('local')}
+                  className={`flex items-start gap-3 p-3 rounded-lg cursor-pointer transition-all ${nodeType === 'local' ? 'bg-emerald-500/10 border-emerald-500/30' : 'hover:bg-white/5 border-transparent'} border`}
+                >
+                  <Box className={`w-5 h-5 mt-0.5 ${nodeType === 'local' ? 'text-emerald-400' : 'text-slate-500'}`} />
+                  <div>
+                    <h4 className={`text-sm font-bold ${nodeType === 'local' ? 'text-emerald-300' : 'text-slate-300'}`}>SF3D + PBR (Local)</h4>
+                    <p className="text-[10px] text-slate-400 mt-1">Geração sub-segundo via Worker Local. Experimental.</p>
+                  </div>
+                  {nodeType === 'local' && <Check className="w-4 h-4 text-emerald-400 ml-auto mt-1" />}
+                </div>
+              </div>
+
               {/* Gerar em Partes */}
               <div className="flex items-center justify-between">
                 <div className="flex-1 pr-2">

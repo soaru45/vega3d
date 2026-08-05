@@ -4,7 +4,7 @@ import uuid
 import requests
 from bullmq import Worker, Job
 from dotenv import load_dotenv
-from tripo_sr_model import TripoSRGenerator
+from sf3d_model import SF3DGenerator
 from s3_storage import S3Storage
 from mesh_optimizer import MeshOptimizer
 from rigging_engine import RiggingEngine
@@ -15,7 +15,7 @@ REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379")
 host = REDIS_URL.split("://")[1].split(":")[0]
 port = int(REDIS_URL.split("://")[1].split(":")[1]) if ":" in REDIS_URL.split("://")[1] else 6379
 
-generator = TripoSRGenerator()
+generator = SF3DGenerator()
 s3 = S3Storage()
 mesh_opt = MeshOptimizer()
 rigger = RiggingEngine()
@@ -40,7 +40,7 @@ async def process_job(job: Job, job_token: str):
     print("2. Removendo background (rembg)")
     await asyncio.sleep(1) # Processamento pesado de IO/CPU
 
-    print("3. Gerando modelo 3D (TripoSR)")
+    print("3. Gerando modelo 3D com Qualidade Avançada (SF3D + PBR)")
     glb_path = generator.generate_glb_from_image(local_image_path, progress_callback)
     
     print("3.5. Otimizando Malha e gerando LODs")

@@ -24,7 +24,14 @@ export class AiController {
   async generateImage(
     @CurrentUser() user: any,
     @UploadedFile() file: Express.Multer.File,
-    @Body() body: { prompt?: string; projectId?: string }
+    @Body() body: { 
+      prompt?: string; 
+      projectId?: string;
+      nodeType?: string;
+      texture8k?: string;
+      partsGeneration?: string;
+      autoRigging?: string;
+    }
   ) {
     if (!file) throw new BadRequestException('Imagem é obrigatória');
     
@@ -37,7 +44,11 @@ export class AiController {
     return this.aiService.generate(user.sub, {
       prompt: body.prompt || 'Modelo gerado por imagem',
       projectId: body.projectId,
-      imageUrl: tempUrl
+      imageUrl: tempUrl,
+      nodeType: body.nodeType || 'local',
+      texture8k: body.texture8k === 'true',
+      partsGeneration: body.partsGeneration === 'true',
+      autoRigging: body.autoRigging === 'true'
     });
   }
 

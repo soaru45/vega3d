@@ -54,9 +54,9 @@ export default function Home() {
           transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
           className="flex items-center gap-4"
         >
-          <Link href="/login" className="text-sm font-medium hover:text-white transition-colors">Entrar</Link>
+          <Link href="/dashboard" className="text-sm font-medium hover:text-white transition-colors">Acessar App (V2)</Link>
           <Button asChild className="bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-full px-6 backdrop-blur-md shadow-[0_0_20px_rgba(255,255,255,0.1)] transition-all">
-            <Link href="/register">Começar Grátis</Link>
+            <Link href="/dashboard">Começar Grátis</Link>
           </Button>
         </motion.div>
       </header>
@@ -102,13 +102,13 @@ export default function Home() {
           className="flex flex-col sm:flex-row gap-5"
         >
           <Button size="lg" className="bg-white text-black hover:bg-slate-200 gap-2 h-14 px-8 rounded-full text-base font-bold shadow-[0_0_30px_rgba(255,255,255,0.3)] transition-all hover:scale-105" asChild>
-            <Link href="/register">
-              Começar Gratuitamente <ArrowRight className="w-5 h-5 ml-1" />
+            <Link href="/dashboard">
+              Abrir Dashboard V2 <ArrowRight className="w-5 h-5 ml-1" />
             </Link>
           </Button>
           <Button size="lg" variant="outline" className="gap-2 h-14 px-8 rounded-full text-base border-slate-700 bg-black/50 hover:bg-slate-800 text-white backdrop-blur-md transition-all hover:border-slate-500" asChild>
-            <Link href="/login">
-              Acessar Plataforma
+            <Link href="/admin">
+              Modo Administrador (God Mode)
             </Link>
           </Button>
         </motion.div>
