@@ -57,21 +57,33 @@ export function GenerationPanel() {
       const modelsRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${cleanApiKey}`);
       const modelsData = await modelsRes.json();
       
-      let selectedModelName = "gemini-1.5-flash"; // default fallback
+      let selectedModelName = "gemini-pro"; // default fallback
       if (modelsData && modelsData.models) {
-        // Tentar encontrar 1.5 pro, 1.5 flash, ou pro-vision
-        const availableModels = modelsData.models.map((m: any) => m.name.replace('models/', ''));
-        if (availableModels.includes('gemini-1.5-pro')) selectedModelName = 'gemini-1.5-pro';
-        else if (availableModels.includes('gemini-1.5-flash')) selectedModelName = 'gemini-1.5-flash';
-        else if (availableModels.includes('gemini-1.5-pro-latest')) selectedModelName = 'gemini-1.5-pro-latest';
-        else if (availableModels.includes('gemini-pro-vision')) selectedModelName = 'gemini-pro-vision';
-        else if (availableModels.length > 0) {
-          // Pega o primeiro que suporte generateContent
-          selectedModelName = availableModels[0];
+        // Filtrar modelos válidos para geração
+        let validModels = modelsData.models
+          .filter((m: any) => m.supportedGenerationMethods?.includes('generateContent') && m.name.includes('gemini'))
+          .map((m: any) => m.name.replace('models/', ''));
+
+        // Ordenar decrescente para pegar as versões mais novas (3.x, etc) primeiro
+        validModels.sort((a: string, b: string) => b.localeCompare(a));
+        
+        // Mostrar no console o que achamos
+        setAnalysisText("Modelos encontrados: " + validModels.join(", ") + "\nBuscando a versão mais avançada...\n");
+
+        // Priorizar Pro, depois Flash. Ignorar versões antigas depreciadas se possível
+        const proModels = validModels.filter((name: string) => name.includes('pro') && !name.includes('vision') && !name.includes('1.0'));
+        const flashModels = validModels.filter((name: string) => name.includes('flash') && !name.includes('2.5')); // evitando o erro 2.5-flash
+
+        if (proModels.length > 0) {
+          selectedModelName = proModels[0]; // Pega o Pro mais recente (ex: gemini-3.0-pro)
+        } else if (flashModels.length > 0) {
+          selectedModelName = flashModels[0];
+        } else if (validModels.length > 0) {
+          selectedModelName = validModels[0];
         }
       }
 
-      setAnalysisText(`Modelo selecionado: ${selectedModelName}\nIniciando varredura geométrica e de materiais...\n`);
+      setAnalysisText(`✅ IA Alocada: ${selectedModelName}\nIniciando varredura geométrica e de materiais...\n`);
       
       // Import dynamic to avoid Next.js client-side errors if any
       const { GoogleGenerativeAI } = await import('@google/generative-ai');
