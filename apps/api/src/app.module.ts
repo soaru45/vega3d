@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { BullModule } from '@nestjs/bullmq';
 
 import { validateEnv } from './config/env.config';
 
@@ -30,6 +31,15 @@ import { GlobalModule } from './common/global.module';
       isGlobal: true,
       validate: validateEnv,
       envFilePath: '../../.env.local',
+    }),
+    BullModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        connection: {
+          url: configService.get<string>('REDIS_URL'),
+        },
+      }),
+      inject: [ConfigService],
     }),
     HealthModule,
     UsersModule,

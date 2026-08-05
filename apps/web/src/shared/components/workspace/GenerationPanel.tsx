@@ -1,5 +1,6 @@
 import * as React from 'react';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { io, Socket } from 'socket.io-client';
 import { Image as ImageIcon, Box, Type, PlaySquare, UploadCloud, ChevronDown, Check, Coins, Globe, Loader2, Key } from 'lucide-react';
 import { useWorkspaceStore } from '@/shared/stores/useWorkspaceStore';
 
@@ -19,8 +20,18 @@ export function GenerationPanel() {
 
   // Global state
   const { isGenerating, setIsGenerating, setModelUrl, setProgress, setAnalysisText } = useWorkspaceStore();
-
+  
+  const socketRef = useRef<Socket | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    // Inicializa conexão websocket
+    socketRef.current = io(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001');
+    
+    return () => {
+      socketRef.current?.disconnect();
+    };
+  }, []);
 
   const handleUploadClick = () => {
     fileInputRef.current?.click();
@@ -33,12 +44,6 @@ export function GenerationPanel() {
   };
 
   const handleGenerate = async () => {
-    if (!apiKey) {
-      alert("Por favor, insira sua Chave do Gemini (Gemini API Key) nas configurações.");
-      setSettingsOpen(true);
-      return;
-    }
-
     if (activeTab === 'image' && !selectedFile) {
       alert("Por favor, faça o upload de uma imagem primeiro.");
       return;
@@ -47,55 +52,42 @@ export function GenerationPanel() {
     setIsGenerating(true);
     setModelUrl(null);
     setProgress(0);
-    setAnalysisText("Iniciando varredura geométrica e de materiais...\n");
+    setAnalysisText("Iniciando upload para os servidores Enterprise...\n");
 
     try {
+      let formData = new FormData();
+      if (selectedFile) formData.append('image', selectedFile);
+      if (prompt) formData.append('prompt', prompt);
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/ai/image-to-3d`, {
+        method: 'POST',
+        // Nota: O JWT Token real viria do AuthProvider
+        headers: {
+          'Authorization': 'Bearer ' + (localStorage.getItem('token') || 'dummy-token')
+        },
+        body: formData
+      });
+
+      if (!response.ok) throw new Error('Falha ao enviar requisição para a API NestJS');
+      
+      const data = await response.json();
+      const generationId = data.generationId;
+
+      setAnalysisText("Job enfileirado no Redis. Aguardando processamento do Worker Python...\n");
       setProgress(10);
-      setAnalysisText("Conectando ao núcleo de visão...\n");
 
-      // Simulação de delay de rede
-      await new Promise(r => setTimeout(r, 1000));
-      setProgress(20);
+      // Assinar eventos web-socket para este job
+      socketRef.current?.on(`generation-progress-${generationId}`, (msg: any) => {
+        setProgress(msg.progress);
+        if (msg.fullText) setAnalysisText(msg.fullText);
+      });
 
-      const categories = ['[VEHICLE]', '[OBJECT]', '[FURNITURE]', '[CHARACTER]'];
-      
-      // Ciclo determinístico para NUNCA repetir o mesmo modelo seguido
-      const finalCategory = categories[globalGenerationCounter % categories.length];
-      globalGenerationCounter++;
-
-      const mockAnalysis = `[INICIANDO ANÁLISE GEOMÉTRICA]
-- Classe de Objeto Detectada: Malha Complexa / Alta Resolução
-- Estimativa de Polígonos: 45.000 Tris (Otimizado para Engine AAA)
-- Física de Materiais (PBR):
-  - Albedo: Cores base identificadas a partir dos pixels.
-  - Roughness: Variação dinâmica calculada para engine de luz.
-  - Metallic: Mapeamento de reflexividade estrutural.
-- Geração de Normal Maps: Extraindo relevos da imagem...
-- Topologia: Quad-based (retopologia automática).
-
-Análise visual concluída com sucesso. Objeto categorizado.
-${finalCategory}`;
-
-      let fullText = "";
-      for (let i = 0; i < mockAnalysis.length; i++) {
-        fullText += mockAnalysis[i];
-        setAnalysisText("✅ Motor Híbrido Ativado (Offline Architect Mode)\nIniciando varredura geométrica e de materiais...\n\n" + fullText);
-        setProgress(Math.min(95, 20 + Math.floor((i / mockAnalysis.length) * 70)));
-        await new Promise(r => setTimeout(r, 15)); // typing effect speed
-      }
-
-      setProgress(100);
-
-      // Determine the 3D model based on the keyword
-      let finalModel = 'https://modelviewer.dev/shared-assets/models/Astronaut.glb'; // Default
-      
-      if (fullText.includes('[VEHICLE]')) finalModel = 'https://modelviewer.dev/shared-assets/models/glTF-Sample-Models/2.0/ToyCar/glTF-Binary/ToyCar.glb';
-      else if (fullText.includes('[FURNITURE]')) finalModel = 'https://modelviewer.dev/shared-assets/models/Chair.glb';
-      else if (fullText.includes('[OBJECT]')) finalModel = 'https://modelviewer.dev/shared-assets/models/glTF-Sample-Models/2.0/DamagedHelmet/glTF-Binary/DamagedHelmet.glb';
-      else if (fullText.includes('[CHARACTER]')) finalModel = 'https://modelviewer.dev/shared-assets/models/Astronaut.glb';
-      
-      setModelUrl(finalModel);
-      setIsGenerating(false);
+      socketRef.current?.on(`generation-complete-${generationId}`, (msg: any) => {
+        setModelUrl(msg.modelUrl);
+        setIsGenerating(false);
+        setProgress(100);
+        setAnalysisText(prev => prev + "\n[SUCESSO] Arquivo .glb real processado e exportado com sucesso.");
+      });
 
     } catch (err: any) {
       console.error(err);

@@ -23,6 +23,7 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-resizable-panels": "^2.0.19",
+    "socket.io-client": "^4.8.3",
     "tailwind-merge": "^2.6.1",
     "three-stdlib": "^2.29.14",
     "zustand": "^4.5.2"
