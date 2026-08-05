@@ -51,6 +51,8 @@ export function GenerationPanel() {
     setModelUrl(null);
     setProgress(0);
 
+    const cleanApiKey = apiKey.trim();
+
     try {
       let imageToken = '';
 
@@ -63,7 +65,7 @@ export function GenerationPanel() {
         const uploadRes = await fetch('/api/tripo/upload', {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${apiKey}`,
+            'Authorization': `Bearer ${cleanApiKey}`,
           },
           body: formData
         });
@@ -84,7 +86,7 @@ export function GenerationPanel() {
       const createRes = await fetch('/api/tripo/task', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${apiKey}`,
+          'Authorization': `Bearer ${cleanApiKey}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(taskPayload)
@@ -107,7 +109,7 @@ export function GenerationPanel() {
 
           const pollRes = await fetch(`/api/tripo/task/${taskId}`, {
             headers: {
-              'Authorization': `Bearer ${apiKey}`
+              'Authorization': `Bearer ${cleanApiKey}`
             }
           });
           const pollData = await pollRes.json();
