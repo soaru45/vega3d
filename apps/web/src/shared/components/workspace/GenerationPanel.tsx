@@ -60,7 +60,7 @@ export function GenerationPanel() {
         const formData = new FormData();
         formData.append('file', selectedFile);
         
-        const uploadRes = await fetch('https://api.tripo3d.ai/v2/openapi/upload', {
+        const uploadRes = await fetch('/api/tripo/upload', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${apiKey}`,
@@ -81,7 +81,7 @@ export function GenerationPanel() {
         ? { type: 'image_to_model', file: { type: selectedFile?.type.split('/')[1] === 'png' ? 'png' : 'jpg', file_token: imageToken } }
         : { type: 'text_to_model', prompt: prompt };
 
-      const createRes = await fetch('https://api.tripo3d.ai/v2/openapi/task', {
+      const createRes = await fetch('/api/tripo/task', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${apiKey}`,
@@ -105,7 +105,7 @@ export function GenerationPanel() {
           // Aumenta o progresso falsamente pra dar feedback de que tá rodando
           setProgress(Math.min(40 + (pollCount * 2), 95));
 
-          const pollRes = await fetch(`https://api.tripo3d.ai/v2/openapi/task/${taskId}`, {
+          const pollRes = await fetch(`/api/tripo/task/${taskId}`, {
             headers: {
               'Authorization': `Bearer ${apiKey}`
             }
