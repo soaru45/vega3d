@@ -6,6 +6,8 @@ from bullmq import Worker, Job
 from dotenv import load_dotenv
 from tripo_sr_model import TripoSRGenerator
 from s3_storage import S3Storage
+from mesh_optimizer import MeshOptimizer
+from rigging_engine import RiggingEngine
 
 load_dotenv()
 
@@ -15,10 +17,13 @@ port = int(REDIS_URL.split("://")[1].split(":")[1]) if ":" in REDIS_URL.split(":
 
 generator = TripoSRGenerator()
 s3 = S3Storage()
+mesh_opt = MeshOptimizer()
+rigger = RiggingEngine()
 
 async def process_job(job: Job, job_token: str):
     print(f"[AI Worker] Iniciando job {job.id} de {job.data.get('userId')}")
     image_url = job.data.get('imageUrl')
+    auto_rigging = job.data.get('autoRigging') == 'true'
     
     def progress_callback(progress):
         loop = asyncio.get_event_loop()
@@ -38,13 +43,23 @@ async def process_job(job: Job, job_token: str):
     print("3. Gerando modelo 3D (TripoSR)")
     glb_path = generator.generate_glb_from_image(local_image_path, progress_callback)
     
+    print("3.5. Otimizando Malha e gerando LODs")
+    optimized_paths = mesh_opt.optimize_glb(glb_path, target_faces=20000)
+    best_glb_path = optimized_paths[0] if optimized_paths else glb_path
+    
+    if auto_rigging:
+        print("3.8. Executando Rigging Automático")
+        best_glb_path = rigger.auto_rig_character(best_glb_path)
+    
     print("4. Uploading para o S3 (MinIO)")
+    # Vamos fazer o upload do LOD0 (melhor qualidade otimizada) como principal
     object_name = f"models/{uuid.uuid4()}.glb"
-    model_url = s3.upload_file(glb_path, object_name)
+    model_url = s3.upload_file(best_glb_path, object_name)
 
     print(f"[AI Worker] Job {job.id} concluído! URL: {model_url}")
     return {
         "modelUrl": model_url,
+        "lods": len(optimized_paths),
         "status": "COMPLETED"
     }
 

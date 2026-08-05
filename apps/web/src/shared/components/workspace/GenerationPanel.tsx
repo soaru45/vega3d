@@ -12,6 +12,7 @@ export function GenerationPanel() {
   const [settingsOpen, setSettingsOpen] = useState(true);
   const [partsToggle, setPartsToggle] = useState(false);
   const [texture8k, setTexture8k] = useState(false);
+  const [autoRigging, setAutoRigging] = useState(false);
   
   // States for forms
   const [apiKey, setApiKey] = useState('');
@@ -63,6 +64,7 @@ export function GenerationPanel() {
       formData.append('modelType', modelType);
       formData.append('texture8k', texture8k ? 'true' : 'false');
       formData.append('partsGeneration', partsToggle ? 'true' : 'false');
+      formData.append('autoRigging', autoRigging ? 'true' : 'false');
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/ai/image-to-3d`, {
         method: 'POST',
@@ -281,6 +283,19 @@ export function GenerationPanel() {
                   </div>
                 </div>
                 <Toggle checked={texture8k} onChange={() => setTexture8k(!texture8k)} />
+              </div>
+
+              {/* Auto Rigging */}
+              <div className="flex items-center justify-between">
+                <div className="flex-1 pr-2">
+                  <div className="flex items-center gap-1">
+                    <span className="text-sm text-slate-200 text-indigo-300 font-bold flex items-center gap-1">
+                      <PlaySquare className="w-3.5 h-3.5" /> Auto-Rigging
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-slate-500">Adiciona esqueleto p/ animação</p>
+                </div>
+                <Toggle checked={autoRigging} onChange={() => setAutoRigging(!autoRigging)} />
               </div>
 
               {/* Privacidade */}
