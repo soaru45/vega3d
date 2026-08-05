@@ -1,24 +1,22 @@
 'use client';
 
 import * as React from 'react';
+import Script from 'next/script';
 import { MousePointer2, Focus, Video, Loader2 } from 'lucide-react';
-import { useWorkspaceStore } from '../stores/useWorkspaceStore';
+import { useWorkspaceStore } from '@/shared/stores/useWorkspaceStore';
 
 export function Viewport3D() {
   const { isGenerating, progress, modelUrl } = useWorkspaceStore();
   const [modelViewerLoaded, setModelViewerLoaded] = React.useState(false);
 
-  React.useEffect(() => {
-    // Dynamic import to avoid Next.js SSR issues with Web Components
-    import('@google/model-viewer').then(() => {
-      setModelViewerLoaded(true);
-    }).catch(err => {
-      console.error('Failed to load model-viewer:', err);
-    });
-  }, []);
-
   return (
     <div className="flex-1 relative bg-tripo-bg overflow-hidden flex items-center justify-center min-w-0">
+      
+      <Script 
+        type="module" 
+        src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js"
+        onReady={() => setModelViewerLoaded(true)}
+      />
       
       {isGenerating ? (
         <div className="flex flex-col items-center justify-center w-full max-w-md p-6">

@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { useState, useRef } from 'react';
 import { Image as ImageIcon, Box, Type, PlaySquare, UploadCloud, ChevronDown, Check, Coins, Globe, Loader2, Key } from 'lucide-react';
-import { useWorkspaceStore } from '../stores/useWorkspaceStore';
+import { useWorkspaceStore } from '@/shared/stores/useWorkspaceStore';
 
 export function GenerationPanel() {
   const [activeTab, setActiveTab] = useState<'image' | 'text'>('image');
