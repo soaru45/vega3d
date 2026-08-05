@@ -70,14 +70,14 @@ export function GenerationPanel() {
         // Mostrar no console o que achamos
         setAnalysisText("Modelos encontrados: " + validModels.join(", ") + "\nBuscando a versão mais avançada...\n");
 
-        // Priorizar Pro, depois Flash. Ignorar versões antigas depreciadas se possível
-        const proModels = validModels.filter((name: string) => name.includes('pro') && !name.includes('vision') && !name.includes('1.0'));
+        // Priorizar Flash (tem cota gratuita maior), depois Pro. Ignorar versões antigas depreciadas se possível
         const flashModels = validModels.filter((name: string) => name.includes('flash') && !name.includes('2.5')); // evitando o erro 2.5-flash
+        const proModels = validModels.filter((name: string) => name.includes('pro') && !name.includes('vision') && !name.includes('1.0'));
 
-        if (proModels.length > 0) {
-          selectedModelName = proModels[0]; // Pega o Pro mais recente (ex: gemini-3.0-pro)
-        } else if (flashModels.length > 0) {
-          selectedModelName = flashModels[0];
+        if (flashModels.length > 0) {
+          selectedModelName = flashModels[0]; // Pega o Flash mais recente (cota grátis)
+        } else if (proModels.length > 0) {
+          selectedModelName = proModels[0];
         } else if (validModels.length > 0) {
           selectedModelName = validModels[0];
         }
