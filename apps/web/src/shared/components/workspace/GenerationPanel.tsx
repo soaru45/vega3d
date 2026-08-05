@@ -51,7 +51,8 @@ export function GenerationPanel() {
       // Import dynamic to avoid Next.js client-side errors if any
       const { GoogleGenerativeAI } = await import('@google/generative-ai');
       const genAI = new GoogleGenerativeAI(apiKey.trim());
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      // O usuário paga o Gemini Pro, então vamos usar o modelo Pro super avançado
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
 
       const promptText = `
 Você é o Arquiteto 3D Chefe de um estúdio de jogos AAA (como Rockstar para o GTA 6).
