@@ -25,10 +25,10 @@ export function Topbar() {
             Espaço 3D
             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
           </Link>
-          <Link href="/dashboard/home" className="text-slate-400 hover:text-white transition-colors">Início</Link>
+          <Link href="/" className="text-slate-400 hover:text-white transition-colors">Início</Link>
           <Link href="/dashboard/library" className="text-slate-400 hover:text-white transition-colors">Ativos</Link>
-          <Link href="/dashboard/affiliates" className="text-slate-400 hover:text-white transition-colors">Programa de afiliados</Link>
-          <Link href="/dashboard/creators" className="text-slate-400 hover:text-white transition-colors">Programa de Criador</Link>
+          <Link href="#" className="text-slate-400 hover:text-white transition-colors">Programa de afiliados</Link>
+          <Link href="#" className="text-slate-400 hover:text-white transition-colors">Programa de Criador</Link>
         </nav>
       </div>
 
