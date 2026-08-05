@@ -56,8 +56,13 @@ export function GenerationPanel() {
 
     try {
       let formData = new FormData();
-      if (selectedFile) formData.append('image', selectedFile);
-      if (prompt) formData.append('prompt', prompt);
+      if (selectedFile && activeTab === 'image') formData.append('image', selectedFile);
+      if (prompt && activeTab === 'text') formData.append('prompt', prompt);
+      
+      formData.append('type', activeTab);
+      formData.append('modelType', modelType);
+      formData.append('texture8k', texture8k ? 'true' : 'false');
+      formData.append('partsGeneration', partsToggle ? 'true' : 'false');
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/ai/image-to-3d`, {
         method: 'POST',
