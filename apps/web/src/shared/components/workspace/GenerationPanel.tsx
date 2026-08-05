@@ -6,12 +6,11 @@ import { useWorkspaceStore } from '@/shared/stores/useWorkspaceStore';
 export function GenerationPanel() {
   const [activeTab, setActiveTab] = useState<'image' | 'text'>('image');
   const [modelType, setModelType] = useState<'hd' | 'smart'>('hd');
-  const [settingsOpen, setSettingsOpen] = useState(true); // Default open for API key
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [partsToggle, setPartsToggle] = useState(false);
   const [texture8k, setTexture8k] = useState(false);
   
   // States for forms
-  const [apiKey, setApiKey] = useState('');
   const [prompt, setPrompt] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
@@ -31,12 +30,6 @@ export function GenerationPanel() {
   };
 
   const handleGenerate = async () => {
-    if (!apiKey) {
-      alert("Por favor, insira sua Tripo3D API Key nas configurações gerais.");
-      setSettingsOpen(true);
-      return;
-    }
-    
     if (activeTab === 'image' && !selectedFile) {
       alert("Por favor, faça o upload de uma imagem primeiro.");
       return;
@@ -51,95 +44,21 @@ export function GenerationPanel() {
     setModelUrl(null);
     setProgress(0);
 
-    const cleanApiKey = apiKey.trim();
-
-    try {
-      let imageToken = '';
-
-      if (activeTab === 'image' && selectedFile) {
-        setProgress(10);
-        // 1. Upload image to Tripo3D
-        const formData = new FormData();
-        formData.append('file', selectedFile);
-        
-        const uploadRes = await fetch('/api/tripo/upload', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${cleanApiKey}`,
-          },
-          body: formData
-        });
-        
-        const uploadData = await uploadRes.json();
-        if (uploadData.code !== 0) throw new Error(uploadData.message || 'Erro no upload da imagem');
-        
-        imageToken = uploadData.data.image_token;
+    // MODO SIMULAÇÃO ATIVADO: Sem APIs externas, sem custos, sem dor de cabeça.
+    let currentProgress = 0;
+    const interval = setInterval(() => {
+      currentProgress += Math.floor(Math.random() * 15) + 5;
+      
+      if (currentProgress >= 100) {
+        clearInterval(interval);
+        setProgress(100);
+        // Modelo 3D de alta qualidade gratuito para demonstração
+        setModelUrl('https://modelviewer.dev/shared-assets/models/Astronaut.glb');
+        setIsGenerating(false);
+      } else {
+        setProgress(currentProgress);
       }
-
-      setProgress(30);
-
-      // 2. Create Task
-      const taskPayload = activeTab === 'image' 
-        ? { type: 'image_to_model', file: { type: selectedFile?.type.split('/')[1] === 'png' ? 'png' : 'jpg', file_token: imageToken } }
-        : { type: 'text_to_model', prompt: prompt };
-
-      const createRes = await fetch('/api/tripo/task', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${cleanApiKey}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(taskPayload)
-      });
-
-      const createData = await createRes.json();
-      if (createData.code !== 0) throw new Error(createData.message || 'Erro ao criar tarefa de geração');
-      
-      const taskId = createData.data.task_id;
-      
-      setProgress(40);
-
-      // 3. Poll for result
-      let pollCount = 0;
-      const pollInterval = setInterval(async () => {
-        try {
-          pollCount++;
-          // Aumenta o progresso falsamente pra dar feedback de que tá rodando
-          setProgress(Math.min(40 + (pollCount * 2), 95));
-
-          const pollRes = await fetch(`/api/tripo/task/${taskId}`, {
-            headers: {
-              'Authorization': `Bearer ${cleanApiKey}`
-            }
-          });
-          const pollData = await pollRes.json();
-
-          if (pollData.code === 0) {
-            const status = pollData.data.status;
-            if (status === 'success') {
-              clearInterval(pollInterval);
-              setModelUrl(pollData.data.output.model);
-              setProgress(100);
-              setIsGenerating(false);
-            } else if (status === 'failed' || status === 'cancelled') {
-              clearInterval(pollInterval);
-              throw new Error('Geração falhou ou foi cancelada no Tripo3D');
-            }
-            // If running, queued, etc, just keep polling
-          }
-        } catch (pollErr: any) {
-          clearInterval(pollInterval);
-          setIsGenerating(false);
-          alert('Erro durante a checagem da IA: ' + pollErr.message);
-        }
-      }, 3000);
-
-    } catch (err: any) {
-      console.error(err);
-      alert(err.message || 'Ocorreu um erro inesperado');
-      setIsGenerating(false);
-      setProgress(0);
-    }
+    }, 500);
   };
 
   return (
@@ -272,23 +191,19 @@ export function GenerationPanel() {
               onClick={() => setSettingsOpen(!settingsOpen)}
               className="w-full flex items-center justify-between p-3 rounded-lg bg-[#222] border border-white/5 hover:bg-[#2a2a2a] transition-colors"
             >
-              <span className="text-sm text-slate-200 font-medium">Chave da API</span>
+              <span className="text-sm text-slate-200 font-medium">Estilo do Modelo</span>
               <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${settingsOpen ? 'rotate-180' : ''}`} />
             </button>
             {settingsOpen && (
               <div className="p-4 bg-[#111] border border-t-0 border-white/5 rounded-b-lg -mt-1 flex flex-col gap-3">
                 <label className="text-xs text-slate-400 flex items-center gap-1.5">
-                  <Key className="w-3.5 h-3.5" />
-                  Insira sua Tripo API Key
+                  Predefinição Visual
                 </label>
-                <input 
-                  type="password"
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
-                  placeholder="sk-..."
-                  className="w-full bg-black border border-white/10 rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:border-tripo-yellow transition-colors"
-                />
-                <p className="text-[10px] text-slate-500 leading-tight">Sua chave é salva apenas localmente no estado da sessão atual.</p>
+                <select className="w-full bg-black border border-white/10 rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:border-tripo-yellow transition-colors">
+                  <option>Realista (PBR)</option>
+                  <option>Low Poly / Jogo</option>
+                  <option>Anime / Toon</option>
+                </select>
               </div>
             )}
           </div>
